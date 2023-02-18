@@ -1,9 +1,8 @@
-package threads
+package workdistribution
 
 import Size
-import brightness.ThreadData
 
-class ColumnThreadWorkDistributor(
+class RowThreadWorkDistributor(
     symbolToPixelAreaRatio: Int,
     imageSize: Size
 ) : ThreadWorkDistributor(symbolToPixelAreaRatio, imageSize) {
@@ -13,15 +12,15 @@ class ColumnThreadWorkDistributor(
         const val ZERO_OFFSET = 0
     }
 
-    override fun getThreadData2DArray(): Array<Array<ThreadData?>> {
-        val threadDataArray = Array<ThreadData?>(areasPerYDimension) { null }
+    override fun getThreadInputData2DArray(): Array<Array<ThreadInputData?>> {
+        val threadDataArray = Array<ThreadInputData?>(areasPerYDimension) { null }
 
         defineThreadWorkDistribution(threadDataArray)
 
         return Array(1) { threadDataArray }
     }
 
-    private fun defineThreadWorkDistribution(threadDataArray: Array<ThreadData?>, ) {
+    private fun defineThreadWorkDistribution(threadDataArray: Array<ThreadInputData?>, ) {
         val lastYAreaIndex = areasPerYDimension - 1
 
         for (y in 0 until areasPerYDimension) {
@@ -31,7 +30,7 @@ class ColumnThreadWorkDistributor(
             }
 
             val threadWorkAreaSize = Size(imageSize.width, symbolToPixelAreaRatio)
-            threadDataArray[y] = ThreadData(
+            threadDataArray[y] = ThreadInputData(
                 threadWorkAreaSize = threadWorkAreaSize,
                 threadWorkAreaXOffset = ZERO_OFFSET,
                 threadWorkAreaYOffset = y
@@ -46,13 +45,13 @@ class ColumnThreadWorkDistributor(
      * Нижние зоны по y берут на себя невошедшие пиксели снизу
      */
 
-    private fun handleLastYArea(threadDataArray: Array<ThreadData?>, yOffset: Int) {
+    private fun handleLastYArea(threadDataArray: Array<ThreadInputData?>, yOffset: Int) {
         val size = Size(
             imageSize.width,
             symbolToPixelAreaRatio + extraBottomPixels
         )
 
-        val inputThreadData = ThreadData(
+        val inputThreadData = ThreadInputData(
             threadWorkAreaSize = size,
             threadWorkAreaXOffset = ZERO_OFFSET,
             threadWorkAreaYOffset = yOffset

@@ -2,7 +2,8 @@ package brightness
 
 import Size
 import kotlinx.coroutines.*
-import threads.ThreadWorkDistributor
+import workdistribution.ThreadInputData
+import workdistribution.ThreadWorkDistributor
 import java.awt.image.BufferedImage
 
 class CpuBrightnessCalculator(
@@ -15,7 +16,7 @@ class CpuBrightnessCalculator(
     override fun calculateBrightness(image: BufferedImage): Array<FloatArray> {
         bufferedImage = image
 
-        val threadData2DArray = threadWorkDistributor.getThreadData2DArray()
+        val threadData2DArray = threadWorkDistributor.getThreadInputData2DArray()
 
         val width = threadData2DArray.size
         val height = threadData2DArray[0].size
@@ -32,7 +33,7 @@ class CpuBrightnessCalculator(
         return brightness2DArray
     }
 
-    private fun getBrightness(inputThreadData2DArray: Array<Array<ThreadData?>>): List<Float> {
+    private fun getBrightness(inputThreadData2DArray: Array<Array<ThreadInputData?>>): List<Float> {
         val brightnessListDeferred = mutableListOf<Deferred<Float>>()
 
         return runBlocking(Dispatchers.Default) {
@@ -46,13 +47,13 @@ class CpuBrightnessCalculator(
         }
     }
 
-    private fun CoroutineScope.getDeferredBrightness(threadData: ThreadData?) = async {
-        requireNotNull(threadData) { "amogus" }
+    private fun CoroutineScope.getDeferredBrightness(threadInputData: ThreadInputData?) = async {
+        requireNotNull(threadInputData) { "amogus" }
         getMediumBrightness(
             getColorData(
-                threadData.threadWorkAreaXOffset,
-                threadData.threadWorkAreaYOffset,
-                threadData.threadWorkAreaSize
+                threadInputData.threadWorkAreaXOffset,
+                threadInputData.threadWorkAreaYOffset,
+                threadInputData.threadWorkAreaSize
             )
         )
     }

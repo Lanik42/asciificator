@@ -1,6 +1,6 @@
 package brightness
 
-import threads.ThreadWorkDistributor
+import workdistribution.ThreadWorkDistributor
 import java.awt.image.BufferedImage
 
 abstract class BrightnessCalculator(
