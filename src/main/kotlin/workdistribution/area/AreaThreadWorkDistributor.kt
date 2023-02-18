@@ -8,9 +8,9 @@ class AreaThreadWorkDistributor(
     imageSize: Size
 ): ThreadWorkDistributor(symbolToPixelAreaRatio, imageSize) {
 
-    override fun getThreadInputData2DArray(): Array<Array<AreaThreadInputData?>> {
+    override fun getThreadInputData2DArray(): Array<Array<AreaInputData?>> {
         val threadData2DArray = Array(symbolsPerYDimension) {
-            Array<AreaThreadInputData?>(symbolsPerXDimension) { null }
+            Array<AreaInputData?>(symbolsPerXDimension) { null }
         }
 
         defineThreadWorkDistribution(threadData2DArray)
@@ -18,7 +18,7 @@ class AreaThreadWorkDistributor(
         return threadData2DArray
     }
 
-    private fun defineThreadWorkDistribution(threadData2DArray: Array<Array<AreaThreadInputData?>>, ) {
+    private fun defineThreadWorkDistribution(threadData2DArray: Array<Array<AreaInputData?>>, ) {
         val lastXAreaIndex = symbolsPerXDimension - 1
         val lastYAreaIndex = symbolsPerYDimension - 1
 
@@ -40,10 +40,10 @@ class AreaThreadWorkDistributor(
                 }
 
                 val size = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)
-                threadData2DArray[y][x] = AreaThreadInputData(
-                    threadWorkAreaSize = size,
-                    threadWorkAreaXStart = x,
-                    threadWorkAreaYStart = y
+                threadData2DArray[y][x] = AreaInputData(
+                    areaSize = size,
+                    areaXOffset = x,
+                    areaYOffset = y
                 )
             }
         }
@@ -58,37 +58,37 @@ class AreaThreadWorkDistributor(
      * Самые нижние зоны по y берут на себя невошедшие пиксели снизу
      */
 
-    private fun handleLastYArea(inputThreadDataArray: Array<Array<AreaThreadInputData?>>, xOffset: Int, yOffset: Int) {
+    private fun handleLastYArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
         val size = Size(symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
 
-        val inputThreadData = AreaThreadInputData(
-            threadWorkAreaSize = size,
-            threadWorkAreaXStart = xOffset,
-            threadWorkAreaYStart = yOffset
+        val inputThreadData = AreaInputData(
+            areaSize = size,
+            areaXOffset = xOffset,
+            areaYOffset = yOffset
         )
 
         inputThreadDataArray[yOffset][xOffset] = inputThreadData
     }
 
-    private fun handleLastXArea(inputThreadDataArray: Array<Array<AreaThreadInputData?>>, xOffset: Int, yOffset: Int) {
+    private fun handleLastXArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
         val size = Size(extraRightPixels + symbolToPixelAreaRatio, symbolToPixelAreaRatio)
 
-        val inputThreadData = AreaThreadInputData(
-            threadWorkAreaSize = size,
-            threadWorkAreaXStart = xOffset,
-            threadWorkAreaYStart = yOffset
+        val inputThreadData = AreaInputData(
+            areaSize = size,
+            areaXOffset = xOffset,
+            areaYOffset = yOffset
         )
 
         inputThreadDataArray[yOffset][xOffset] = inputThreadData
     }
 
-    private fun handleLastXYArea(inputThreadDataArray: Array<Array<AreaThreadInputData?>>, xOffset: Int, yOffset: Int) {
+    private fun handleLastXYArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
         val size = Size(extraRightPixels + symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
 
-        val inputThreadData = AreaThreadInputData(
-            threadWorkAreaSize = size,
-            threadWorkAreaXStart = xOffset,
-            threadWorkAreaYStart = yOffset
+        val inputThreadData = AreaInputData(
+            areaSize = size,
+            areaXOffset = xOffset,
+            areaYOffset = yOffset
         )
 
         inputThreadDataArray[yOffset][xOffset] = inputThreadData

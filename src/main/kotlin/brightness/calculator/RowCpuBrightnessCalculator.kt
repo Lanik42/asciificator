@@ -11,25 +11,47 @@ import java.util.ArrayList
 class RowCpuBrightnessCalculator(
     private val imageSize: Size,
     symbolToPixelAreaRatio: Int,
-): BrightnessCalculator(symbolToPixelAreaRatio) {
+) : BrightnessCalculator(symbolToPixelAreaRatio) {
 
     private var bufferedImage: BufferedImage? = null
 
     override fun calculateBrightness(image: BufferedImage): List<FloatArray> {
         bufferedImage = image
 
-        return measureTimeMillis {
-            val threadDataArray = RowThreadWorkDistributor(
-                symbolToPixelAreaRatio,
-                Size(image.width, image.height)
-            ).getThreadInputData2DArray()
+        val threadDataArray = RowThreadWorkDistributor(
+            symbolToPixelAreaRatio,
+            Size(image.width, image.height)
+        ).getThreadInputData2DArray()
 
-            val brightnessList = getBrightness(threadDataArray)
-
-            bufferedImage = null
-            brightnessList
-        }
+        val brightnessList = getBrightness(threadDataArray)
+        bufferedImage = null
+        return brightnessList
     }
+
+    private fun getDataSingleThread(threadDataArray: Array<RowInputData?>): List<FloatArray> {
+        val symbolsPerXDimension = imageSize.width / symbolToPixelAreaRatio
+
+        val brightnessArrayResult = ArrayList<FloatArray>(symbolsPerXDimension)
+
+        threadDataArray.forEach { threadData ->
+            val brightnessArray = FloatArray(symbolsPerXDimension) { -1f }
+
+            for (x in 0 until symbolsPerXDimension) {
+                val brightness = getMediumBrightness(
+                    getColorData(
+                        xOffset = x,
+                        yOffset = threadData!!.areaYOffset,
+                        size = threadData.areaSize,
+                    )
+                )
+                brightnessArray[x] = brightness
+            }
+            brightnessArrayResult.add(brightnessArray)
+        }
+        return brightnessArrayResult
+
+    }
+
 
     // Improve: сразу создавать 2d массив, чтобы потом не перекидывать данные
     private fun getBrightness(threadDataArray: Array<RowInputData?>): List<FloatArray> {
@@ -41,26 +63,27 @@ class RowCpuBrightnessCalculator(
                 brightnessArrayDeferred.add(getDeferredBrightness(threadData, symbolsPerXDimension))
             }
 
-           brightnessArrayDeferred.awaitAll()
+            brightnessArrayDeferred.awaitAll()
         }
     }
 
-    private fun CoroutineScope.getDeferredBrightness(threadInputData: RowInputData?, symbolsPerXDimension: Int) = async {
-        requireNotNull(threadInputData) { "amogus" }
-        val brightnessArray = FloatArray(symbolsPerXDimension) { -1f }
+    private fun CoroutineScope.getDeferredBrightness(threadInputData: RowInputData?, symbolsPerXDimension: Int) =
+        async {
+            requireNotNull(threadInputData) { "amogus" }
+            val brightnessArray = FloatArray(symbolsPerXDimension) { -1f }
 
-        for (x in 0 until symbolsPerXDimension) {
-            val brightness = getMediumBrightness(
-                getColorData(
-                    xOffset = x,
-                    yOffset = threadInputData.yOffset,
-                    size = threadInputData.singleSymbolArea,
+            for (x in 0 until symbolsPerXDimension) {
+                val brightness = getMediumBrightness(
+                    getColorData(
+                        xOffset = x,
+                        yOffset = threadInputData.areaYOffset,
+                        size = threadInputData.areaSize,
+                    )
                 )
-            )
-            brightnessArray[x] = brightness
+                brightnessArray[x] = brightness
+            }
+            brightnessArray
         }
-        brightnessArray
-    }
 
 
     private fun getColorData(xOffset: Int, yOffset: Int, size: Size): Array<IntArray> {

@@ -3,8 +3,7 @@ package brightness.calculator
 import Size
 import kotlinx.coroutines.*
 import measureTimeMillis
-import workdistribution.area.AreaThreadInputData
-import workdistribution.ThreadWorkDistributor
+import workdistribution.area.AreaInputData
 import workdistribution.area.AreaThreadWorkDistributor
 import java.awt.image.BufferedImage
 
@@ -40,7 +39,7 @@ class AreaCpuBrightnessCalculator(
     }
 
     // Improve: сразу создавать 2d массив, чтобы потом не перекидывать данные
-    private fun getBrightness(inputThreadData2DArray: Array<Array<AreaThreadInputData?>>): List<Float> {
+    private fun getBrightness(inputThreadData2DArray: Array<Array<AreaInputData?>>): List<Float> {
         val brightnessListDeferred = mutableListOf<Deferred<Float>>()
 
         return runBlocking(Dispatchers.Default) {
@@ -54,13 +53,13 @@ class AreaCpuBrightnessCalculator(
         }
     }
 
-    private fun CoroutineScope.getDeferredBrightness(areaThreadInputData: AreaThreadInputData?) = async {
-        requireNotNull(areaThreadInputData) { "amogus" }
+    private fun CoroutineScope.getDeferredBrightness(areaInputData: AreaInputData?) = async {
+        requireNotNull(areaInputData) { "amogus" }
         getMediumBrightness(
             getColorData(
-                areaThreadInputData.threadWorkAreaXStart,
-                areaThreadInputData.threadWorkAreaYStart,
-                areaThreadInputData.threadWorkAreaSize,
+                areaInputData.areaXOffset,
+                areaInputData.areaYOffset,
+                areaInputData.areaSize,
             )
         )
     }

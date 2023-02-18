@@ -1,7 +1,7 @@
 package workdistribution
 
 import Size
-import workdistribution.area.AreaThreadInputData
+import workdistribution.area.AreaInputData
 
 abstract class ThreadWorkDistributor(
     protected val symbolToPixelAreaRatio: Int,
@@ -14,5 +14,5 @@ abstract class ThreadWorkDistributor(
     protected val symbolsPerXDimension = imageSize.width / symbolToPixelAreaRatio
     protected val symbolsPerYDimension = imageSize.height / symbolToPixelAreaRatio
 
-    abstract fun getThreadInputData2DArray(): Array<Array<AreaThreadInputData?>>
+    abstract fun getThreadInputData2DArray(): Array<Array<AreaInputData?>>
 }

@@ -9,7 +9,7 @@ const val COLORED = "-c"
 const val SYMBOL_TO_PIXEL_AREA_RATIO = "-ratio"
 
 fun main(args: Array<String>) {
-    val inputArgs = InputArgs(path = "C:\\amogus3.png", symbolToPixelAreaRatio = 64) // args.parse()
+    val inputArgs = InputArgs(path = "C:\\amogus2.jpg", symbolToPixelAreaRatio = 12) // args.parse()
 
     val file = File(inputArgs.path)
     val bufferedImage = ImageIO.read(file)
