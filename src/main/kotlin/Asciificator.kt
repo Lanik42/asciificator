@@ -17,7 +17,7 @@ class Asciificator {
         val areaBrightnessCalculator = AreaCpuBrightnessCalculator(symbolToPixelAreaRatio)
         val rowBrightnessCalculator = RowCpuBrightnessCalculator(imageSize, symbolToPixelAreaRatio)
 
-        val brightness2DList = areaBrightnessCalculator.calculateBrightness(bufferedImage)
+        val brightness2DList = rowBrightnessCalculator.calculateBrightness(bufferedImage)
 
         BrightnessConverter().convertToSymbols(brightness2DList)
     }

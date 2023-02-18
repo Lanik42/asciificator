@@ -28,8 +28,8 @@ class RowThreadWorkDistributor(
             }
 
             threadDataArray[y] = RowInputData(
-                singleSymbolArea = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
-                yOffset = y,
+                areaSize = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
+                areaYOffset = y,
             )
         }
     }
@@ -43,8 +43,8 @@ class RowThreadWorkDistributor(
 
     private fun handleLastYArea(threadDataArray: Array<RowInputData?>, yOffset: Int) {
         val inputThreadData = RowInputData(
-            singleSymbolArea = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio + extraBottomPixels),
-            yOffset = yOffset,
+            areaSize = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio + extraBottomPixels),
+            areaYOffset = yOffset,
         )
 
         threadDataArray[yOffset] = inputThreadData
