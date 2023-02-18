@@ -2,8 +2,6 @@ package brightness
 
 import Size
 import kotlinx.coroutines.*
-import measureTimeMillis
-import threads.AreaThreadWorkDistributor
 import threads.ThreadWorkDistributor
 import java.awt.image.BufferedImage
 
@@ -17,81 +15,48 @@ class CpuBrightnessCalculator(
     override fun calculateBrightness(image: BufferedImage): Array<FloatArray> {
         bufferedImage = image
 
-        val inputThreadData2DArray = threadWorkDistributor.getThreadData2DArray()
-        var brightness2DArray: Array<FloatArray> = arrayOf()
+        val threadData2DArray = threadWorkDistributor.getThreadData2DArray()
 
-        val width = inputThreadData2DArray.size
-        val height = inputThreadData2DArray[0].size
+        val width = threadData2DArray.size
+        val height = threadData2DArray[0].size
 
-        // ------------ SINGLE THREAD ----------
-        measureTimeMillis("single thread") {
-            val brightnessList = getDataSingleThread(inputThreadData2DArray)
+        val brightnessList = getBrightness(threadData2DArray)
 
-            brightness2DArray = Array(width) { xIndex ->
-                FloatArray(height) { yIndex ->
-                    brightnessList[inputThreadData2DArray.size * yIndex + xIndex]
-                }
+        val brightness2DArray = Array(width) { xIndex ->
+            FloatArray(height) { yIndex ->
+                brightnessList[threadData2DArray.size * yIndex + xIndex]
             }
         }
 
-        // ------------ MULTI THREAD ----------
-        measureTimeMillis("multi thread") {
-            val brightnessListMultiThread = getDataMultiThread(inputThreadData2DArray)
-
-            val brightness2DArrayMultiThread = Array(width) { xIndex ->
-                FloatArray(height) { yIndex ->
-                    brightnessListMultiThread[inputThreadData2DArray.size * yIndex + xIndex]
-                }
-            }
-        }
-
-
+        bufferedImage = null
         return brightness2DArray
     }
 
-    private fun getDataSingleThread(inputThreadData2DArray: Array<Array<ThreadData?>>): List<Float> {
-        val brightnessList = mutableListOf<Float>()
-        inputThreadData2DArray.forEach { threadDataArray ->
-            threadDataArray.forEach { threadData ->
-                requireNotNull(threadData) { "amogus" }
-                brightnessList.add(
-                    getMediumBrightness(
-                        getColorData(
-                            threadData.threadWorkAreaXOffset,
-                            threadData.threadWorkAreaYOffset,
-                            threadData.threadWorkAreaSize
-                        )
-                    )
-                )
-            }
-        }
-        return brightnessList
-    }
-
-    private fun getDataMultiThread(inputThreadData2DArray: Array<Array<ThreadData?>>): List<Float> {
+    private fun getBrightness(inputThreadData2DArray: Array<Array<ThreadData?>>): List<Float> {
         val brightnessListDeferred = mutableListOf<Deferred<Float>>()
 
         return runBlocking(Dispatchers.Default) {
             inputThreadData2DArray.forEach { threadDataArray ->
                 threadDataArray.forEach { threadData ->
-                    async {
-                        requireNotNull(threadData) { "amogus" }
-                        getMediumBrightness(
-                            getColorData(
-                                threadData.threadWorkAreaXOffset,
-                                threadData.threadWorkAreaYOffset,
-                                threadData.threadWorkAreaSize
-                            )
-                        )
-                    }.let {
-                        brightnessListDeferred.add(it)
-                    }
+                    brightnessListDeferred.add(getDeferredBrightness(threadData))
                 }
             }
 
             brightnessListDeferred.awaitAll()
         }
     }
+
+    private fun CoroutineScope.getDeferredBrightness(threadData: ThreadData?) = async {
+        requireNotNull(threadData) { "amogus" }
+        getMediumBrightness(
+            getColorData(
+                threadData.threadWorkAreaXOffset,
+                threadData.threadWorkAreaYOffset,
+                threadData.threadWorkAreaSize
+            )
+        )
+    }
+
 
     private fun getColorData(xOffset: Int, yOffset: Int, size: Size): Array<IntArray> {
         val colorArray = Array(size.width) { IntArray(size.height) }
