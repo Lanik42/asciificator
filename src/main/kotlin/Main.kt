@@ -1,5 +1,3 @@
-import brightness.CpuBrightnessCalculator
-import threads.ColumnThreadWorkDistributor
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
@@ -15,9 +13,35 @@ fun main(args: Array<String>) {
     val file = File(inputArgs.path)
     val bufferedImage = ImageIO.read(file)
 
-    benchmarkDifferentArgs(bufferedImage)
+    Asciificator().processImage(bufferedImage, inputArgs.symbolToPixelAreaRatio)
 
     exitProcess(0)
+}
+
+private fun Array<String>.parse(): InputArgs {
+    val nameToValueMap = getArgNameToValueMap()
+    return nameToValueMap.parseMapToInputArgs()
+}
+
+private fun Array<String>.getArgNameToValueMap(): Map<String, String> {
+    val argNameToValueMap = mutableMapOf<String, String>()
+
+    for (i in 0..lastIndex step 2) {
+        if (i + 1 >= size || get(i + 1).startsWith("-")) {
+            error("Wrong input format! Each argument should be followed by value. Missing value for argument ${get(i)}.")
+        }
+
+        argNameToValueMap[get(i)] = get(i+1)
+    }
+
+    return argNameToValueMap
+}
+
+private fun Map<String, String>.parseMapToInputArgs(): InputArgs {
+    val path = get(ABSOLUTE_FILE_PATH) ?: error("Path (-path) argument not specified!")
+    val symbolToPixelAreaRatio = get(SYMBOL_TO_PIXEL_AREA_RATIO) ?: error("Ratio (-ratio) argument not specified!")
+
+    return InputArgs(path = path, symbolToPixelAreaRatio = symbolToPixelAreaRatio.toInt())
 }
 
 private fun benchmarkDifferentArgs(bufferedImage: BufferedImage) {
@@ -40,30 +64,4 @@ private fun benchmarkDifferentArgs(bufferedImage: BufferedImage) {
         println("\n-------------- BY_COLUMN--------------\n")
         asciificator.testProcessImage(bufferedImage, inputArgs.symbolToPixelAreaRatio, WorkDistributionType.BY_COLUMN)
     }
-}
-
-fun Array<String>.parse(): InputArgs {
-    val nameToValueMap = getArgNameToValueMap()
-    return nameToValueMap.parseMapToInputArgs()
-}
-
-fun Array<String>.getArgNameToValueMap(): Map<String, String> {
-    val argNameToValueMap = mutableMapOf<String, String>()
-
-    for (i in 0..lastIndex step 2) {
-        if (i + 1 >= size || get(i + 1).startsWith("-")) {
-            error("Wrong input format! Each argument should be followed by value. Missing value for argument ${get(i)}.")
-        }
-
-        argNameToValueMap[get(i)] = get(i+1)
-    }
-
-    return argNameToValueMap
-}
-
-fun Map<String, String>.parseMapToInputArgs(): InputArgs {
-    val path = get(ABSOLUTE_FILE_PATH) ?: error("Path (-path) argument not specified!")
-    val symbolToPixelAreaRatio = get(SYMBOL_TO_PIXEL_AREA_RATIO) ?: error("Ratio (-ratio) argument not specified!")
-
-    return InputArgs(path = path, symbolToPixelAreaRatio = symbolToPixelAreaRatio.toInt())
 }

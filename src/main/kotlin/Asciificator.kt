@@ -1,6 +1,6 @@
 import brightness.CpuBrightnessCalculator
-import threads.AreaThreadWorkDistributor
-import threads.ColumnThreadWorkDistributor
+import workdistribution.AreaThreadWorkDistributor
+import workdistribution.RowThreadWorkDistributor
 import java.awt.image.BufferedImage
 
 enum class WorkDistributionType {
@@ -10,17 +10,14 @@ enum class WorkDistributionType {
 
 class Asciificator {
 
-    // аскификатор сам определяет, каким brightnessCalculator пользоваться. На InputArgs можно оставить выбор cpu / gpu
+    // На InputArgs можно оставить выбор cpu / gpu
     fun processImage(bufferedImage: BufferedImage, symbolToPixelAreaRatio: Int) {
         val imageSize = Size(bufferedImage.width, bufferedImage.height)
 
-        val threadWorkDistributor = ColumnThreadWorkDistributor(symbolToPixelAreaRatio, imageSize) // default
-        val brightnessCalculator = CpuBrightnessCalculator(
-            threadWorkDistributor,
-            symbolToPixelAreaRatio,
-        )
+        val threadWorkDistributor = RowThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
+        val brightnessCalculator = CpuBrightnessCalculator(threadWorkDistributor, symbolToPixelAreaRatio,)
 
-        val brightnessArray = brightnessCalculator.calculateBrightness(bufferedImage)
+        val brightness2DArray = brightnessCalculator.calculateBrightness(bufferedImage)
     }
 
     fun testProcessImage(bufferedImage: BufferedImage, symbolToPixelAreaRatio: Int, workDistributionType: WorkDistributionType) {
@@ -38,7 +35,7 @@ class Asciificator {
     private fun getThreadWorkDistributor(workDistributionType: WorkDistributionType, symbolToPixelAreaRatio: Int, imageSize: Size) =
         when(workDistributionType) {
             WorkDistributionType.BY_AREA -> AreaThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
-            WorkDistributionType.BY_COLUMN -> ColumnThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
+            WorkDistributionType.BY_COLUMN -> RowThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
         }
 
 }

@@ -1,7 +1,6 @@
-package threads
+package workdistribution
 
 import Size
-import brightness.ThreadData
 
 abstract class ThreadWorkDistributor(
     protected val symbolToPixelAreaRatio: Int,
@@ -18,5 +17,5 @@ abstract class ThreadWorkDistributor(
         if (extraBottomPixels != 0) this + 1
     }
 
-    abstract fun getThreadData2DArray(): Array<Array<ThreadData?>>
+    abstract fun getThreadInputData2DArray(): Array<Array<ThreadInputData?>>
 }
