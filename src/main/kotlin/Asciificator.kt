@@ -1,6 +1,6 @@
-import brightness.CpuBrightnessCalculator
-import workdistribution.AreaThreadWorkDistributor
-import workdistribution.RowThreadWorkDistributor
+import brightness.calculator.AreaCpuBrightnessCalculator
+import brightness.calculator.RowCpuBrightnessCalculator
+import brightness.converter.BrightnessConverter
 import java.awt.image.BufferedImage
 
 enum class WorkDistributionType {
@@ -14,28 +14,32 @@ class Asciificator {
     fun processImage(bufferedImage: BufferedImage, symbolToPixelAreaRatio: Int) {
         val imageSize = Size(bufferedImage.width, bufferedImage.height)
 
-        val threadWorkDistributor = RowThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
-        val brightnessCalculator = CpuBrightnessCalculator(threadWorkDistributor, symbolToPixelAreaRatio,)
+        val areaBrightnessCalculator = AreaCpuBrightnessCalculator(symbolToPixelAreaRatio)
+        val rowBrightnessCalculator = RowCpuBrightnessCalculator(imageSize, symbolToPixelAreaRatio)
 
-        val brightness2DArray = brightnessCalculator.calculateBrightness(bufferedImage)
+        val brightness2DList = areaBrightnessCalculator.calculateBrightness(bufferedImage)
+
+        BrightnessConverter().convertToSymbols(brightness2DList)
     }
 
     fun testProcessImage(bufferedImage: BufferedImage, symbolToPixelAreaRatio: Int, workDistributionType: WorkDistributionType) {
         val imageSize = Size(bufferedImage.width, bufferedImage.height)
 
-        val threadWorkDistributor = getThreadWorkDistributor(workDistributionType, symbolToPixelAreaRatio, imageSize)
-        val brightnessCalculator = CpuBrightnessCalculator(
-            threadWorkDistributor,
+        val brightnessCalculatorRow = RowCpuBrightnessCalculator(
+            imageSize,
             symbolToPixelAreaRatio,
         )
+        val brightnessCalculatorArea = AreaCpuBrightnessCalculator(
+            symbolToPixelAreaRatio
+        )
 
-        val brightnessArray = brightnessCalculator.calculateBrightness(bufferedImage)
+        brightnessCalculatorRow.calculateBrightness(bufferedImage)
     }
 
-    private fun getThreadWorkDistributor(workDistributionType: WorkDistributionType, symbolToPixelAreaRatio: Int, imageSize: Size) =
-        when(workDistributionType) {
-            WorkDistributionType.BY_AREA -> AreaThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
-            WorkDistributionType.BY_COLUMN -> RowThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
-        }
+//    private fun getThreadWorkDistributor(workDistributionType: WorkDistributionType, symbolToPixelAreaRatio: Int, imageSize: Size) =
+//        when(workDistributionType) {
+//            WorkDistributionType.BY_AREA -> AreaThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
+//            WorkDistributionType.BY_COLUMN -> RowThreadWorkDistributor(symbolToPixelAreaRatio, imageSize)
+//        }
 
 }

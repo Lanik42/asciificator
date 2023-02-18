@@ -1,21 +1,18 @@
 package workdistribution
 
 import Size
+import workdistribution.area.AreaThreadInputData
 
 abstract class ThreadWorkDistributor(
     protected val symbolToPixelAreaRatio: Int,
-    protected val imageSize: Size,
+    imageSize: Size,
 ) {
 
    protected val extraRightPixels = imageSize.width % symbolToPixelAreaRatio
    protected val extraBottomPixels = imageSize.height % symbolToPixelAreaRatio
 
-    protected val areasPerXDimension = (imageSize.width / symbolToPixelAreaRatio).apply {
-        if (extraRightPixels != 0) this + 1
-    }
-    protected val areasPerYDimension = (imageSize.height / symbolToPixelAreaRatio).apply {
-        if (extraBottomPixels != 0) this + 1
-    }
+    protected val symbolsPerXDimension = imageSize.width / symbolToPixelAreaRatio
+    protected val symbolsPerYDimension = imageSize.height / symbolToPixelAreaRatio
 
-    abstract fun getThreadInputData2DArray(): Array<Array<ThreadInputData?>>
+    abstract fun getThreadInputData2DArray(): Array<Array<AreaThreadInputData?>>
 }
