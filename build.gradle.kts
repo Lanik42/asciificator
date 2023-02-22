@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("com.aparapi:aparapi:2.0.0")
+    api("com.aparapi:aparapi:3.0.0")
 }
 
 tasks.test {
