@@ -1,35 +1,42 @@
 package brightness.converter
 
-import java.io.File
+import Color
+import measureTimeMillis
 
-class BrightnessConverter {
+class BrightnessConverter(
+    private val colored: Boolean
+) {
 
     private companion object {
 
-        const val SYMBOLS_BY_BRIGHTNESS = "\$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'."
+        // @%#*+=-:.
+        // $@B%8&WM#*oahkbdpqwmZO0QLYXzcvuft/\|()1+~i!lI;:,"^`'.
+        // $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-+~<>i!lI;:,"^`'.
+        // "\$@B%8&WM#*oahkbdpqwmzcvunxrjft-+~i!lI;:,^`'."
+
+        // $@B%8&WM#*oahkbdpqwmzcvunxrjft-+~i!lI;:,^.
+        // @#%8&dao:*.
+        // @#%8&*c.
+        // #@oi!;"'`
+        // #@%8&*oi!"`.
+        const val SYMBOLS_BY_BRIGHTNESS = "\$@B%8&WM#*oahkbdpqcnxrjft-+~i!lI;:,^."
+        const val SYMBOLS_BY_BRIGHTNESS_COLORED = "@"
     }
 
-    private val brightnessLevelsAmount = SYMBOLS_BY_BRIGHTNESS.length
+    private val brightnessScale = SYMBOLS_BY_BRIGHTNESS.takeIf { colored } ?: SYMBOLS_BY_BRIGHTNESS
+
+    private val brightnessLevelsAmount = brightnessScale.length
     private val brightnessStep = 1 / brightnessLevelsAmount.toFloat()
-    private val brightnessLevels = SYMBOLS_BY_BRIGHTNESS.mapIndexed { index, _ ->
+    private val brightnessLevels = brightnessScale.mapIndexed { index, _ ->
         index * brightnessStep
     }
 
-    fun convertToSymbols(brightness2DList: List<FloatArray>): Array<CharArray> {
-        val symbols2DArray = Array(brightness2DList.size) { CharArray(brightness2DList[0].size) }
+    fun convertToSymbols(color2DList: List<Array<Color>>): Array<CharArray> {
+        val symbols2DArray = Array(color2DList.size) { CharArray(color2DList[0].size) }
 
-        brightness2DList.forEachIndexed { x, brightnessArray ->
-            brightnessArray.forEachIndexed { y, brightness ->
-                symbols2DArray[x][y] = convert(brightness)
-            }
-        }
-
-        val file = File("C:\\amogus2.txt")
-        file.createNewFile()
-        file.writer().use { os ->
-            symbols2DArray.forEach {
-                os.write(it)
-                os.write("\n")
+        color2DList.forEachIndexed { x, colorArray ->
+            colorArray.forEachIndexed { y, colorInfo ->
+                symbols2DArray[x][y] = convert(colorInfo.brightness)
             }
         }
 
@@ -46,12 +53,12 @@ class BrightnessConverter {
                 break
             }
 
-            if (brightnessLevels[i] <= brightness && brightnessLevels[i+1] >= brightness) {
+            if (brightnessLevels[i] <= brightness && brightnessLevels[i + 1] >= brightness) {
                 index = i
                 break
             }
         }
 
-        return SYMBOLS_BY_BRIGHTNESS[index]
+        return brightnessScale[index]
     }
 }

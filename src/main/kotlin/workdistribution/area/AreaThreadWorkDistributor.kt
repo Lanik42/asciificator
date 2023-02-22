@@ -1,6 +1,7 @@
 package workdistribution.area
 
 import Size
+import measureTimeMillis
 import workdistribution.ThreadWorkDistributor
 
 class AreaThreadWorkDistributor(
@@ -9,42 +10,47 @@ class AreaThreadWorkDistributor(
 ): ThreadWorkDistributor(symbolToPixelAreaRatio, imageSize) {
 
     override fun getThreadInputData2DArray(): Array<Array<AreaInputData?>> {
-        val threadData2DArray = Array(symbolsPerYDimension) {
-            Array<AreaInputData?>(symbolsPerXDimension) { null }
-        }
+        val threadData2DArray = measureTimeMillis("thread data get") {
+            val td = Array(symbolsPerYDimension) {
+                Array<AreaInputData?>(symbolsPerXDimension) { null }
+            }
 
-        defineThreadWorkDistribution(threadData2DArray)
+            defineThreadWorkDistribution(td)
+            td
+        }
 
         return threadData2DArray
     }
 
-    private fun defineThreadWorkDistribution(threadData2DArray: Array<Array<AreaInputData?>>, ) {
+    private fun defineThreadWorkDistribution(threadData2DArray: Array<Array<AreaInputData?>>) {
         val lastXAreaIndex = symbolsPerXDimension - 1
         val lastYAreaIndex = symbolsPerYDimension - 1
 
-        for (y in 0 until symbolsPerYDimension) {
-            for (x in 0 until symbolsPerXDimension) {
-                if (y == lastYAreaIndex && x == lastXAreaIndex) {
-                    handleLastXYArea(threadData2DArray, lastXAreaIndex, lastYAreaIndex)
-                    break
-                }
+        measureTimeMillis("cycle time") {
+            for (y in 0 until symbolsPerYDimension) {
+                for (x in 0 until symbolsPerXDimension) {
+                    if (y == lastYAreaIndex && x == lastXAreaIndex) {
+                        handleLastXYArea(threadData2DArray, lastXAreaIndex, lastYAreaIndex)
+                        break
+                    }
 
-                if (y == lastYAreaIndex) {
-                    handleLastYArea(threadData2DArray, x, lastYAreaIndex)
-                    continue
-                }
+                    if (y == lastYAreaIndex) {
+                        handleLastYArea(threadData2DArray, x, lastYAreaIndex)
+                        continue
+                    }
 
-                if (x == lastXAreaIndex) {
-                    handleLastXArea(threadData2DArray, lastXAreaIndex, y)
-                    continue
-                }
+                    if (x == lastXAreaIndex) {
+                        handleLastXArea(threadData2DArray, lastXAreaIndex, y)
+                        continue
+                    }
 
-                val size = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)
-                threadData2DArray[y][x] = AreaInputData(
-                    areaSize = size,
-                    areaXOffset = x,
-                    areaYOffset = y
-                )
+                    val size = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)
+                    threadData2DArray[y][x] = AreaInputData(
+                        areaSize = size,
+                        areaXOffset = x,
+                        areaYOffset = y
+                    )
+                }
             }
         }
     }

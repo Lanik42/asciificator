@@ -1,6 +1,8 @@
-package brightness.calculator
+package brightness.calculator.cpu
 
+import Color
 import Size
+import brightness.calculator.BrightnessCalculator
 import kotlinx.coroutines.*
 import measureTimeMillis
 import workdistribution.area.AreaInputData
@@ -13,29 +15,29 @@ class AreaCpuBrightnessCalculator(
 
     private var bufferedImage: BufferedImage? = null
 
-    override fun calculateBrightness(image: BufferedImage): List<FloatArray> {
+    override fun calculateColor(image: BufferedImage): List<Array<Color>> {
         bufferedImage = image
 
-        return measureTimeMillis {
-            val threadData2DArray = AreaThreadWorkDistributor(
-                symbolToPixelAreaRatio,
-                Size(image.width, image.height)
-            ).getThreadInputData2DArray()
+        val threadData2DArray = AreaThreadWorkDistributor(
+            symbolToPixelAreaRatio,
+            Size(image.width, image.height)
+        ).getThreadInputData2DArray()
 
-            val height = threadData2DArray.size
-            val width = threadData2DArray[0].size
+        val height = threadData2DArray.size
+        val width = threadData2DArray[0].size
 
-            val brightnessList = getBrightness(threadData2DArray)
+        val brightnessList = getBrightness(threadData2DArray)
 
-            val brightness2DArray = MutableList(height) { yIndex ->
-                FloatArray(width) { xIndex ->
-                    brightnessList[yIndex * width + xIndex]
-                }
+        val brightness2DArray = MutableList(height) { yIndex ->
+            FloatArray(width) { xIndex ->
+                brightnessList[yIndex * width + xIndex]
             }
-
-            bufferedImage = null
-            brightness2DArray
         }
+
+        bufferedImage = null
+        brightness2DArray
+        return  listOf() // TODO заглушка
+
     }
 
     // Improve: сразу создавать 2d массив, чтобы потом не перекидывать данные
@@ -45,6 +47,7 @@ class AreaCpuBrightnessCalculator(
         return runBlocking(Dispatchers.Default) {
             inputThreadData2DArray.forEach { threadDataArray ->
                 threadDataArray.forEach { threadData ->
+                    requireNotNull(threadData)
                     brightnessListDeferred.add(getDeferredBrightness(threadData))
                 }
             }
@@ -53,8 +56,7 @@ class AreaCpuBrightnessCalculator(
         }
     }
 
-    private fun CoroutineScope.getDeferredBrightness(areaInputData: AreaInputData?) = async {
-        requireNotNull(areaInputData) { "amogus" }
+    private fun CoroutineScope.getDeferredBrightness(areaInputData: AreaInputData) = async {
         getMediumBrightness(
             getColorData(
                 areaInputData.areaXOffset,
