@@ -1,6 +1,4 @@
-import brightness.calculator.cpu.AreaCpuBrightnessCalculator
 import brightness.calculator.cpu.CoreCpuBrightnessCalculator
-import brightness.calculator.cpu.RowCpuBrightnessCalculator
 import brightness.calculator.gpu.AreaGpuBrightnessCalculator
 import brightness.calculator.gpu.SimpleGpuBrightnessCalculator
 import brightness.converter.BrightnessConverter
@@ -29,8 +27,6 @@ class Asciificator {
     fun processImage(bufferedImage: BufferedImage, inputArgs: InputArgs) {
         val imageSize = Size(bufferedImage.width, bufferedImage.height)
 
-        val areaBrightnessCalculator = AreaCpuBrightnessCalculator(inputArgs.symbolToPixelAreaRatio)
-        val rowBrightnessCalculator = RowCpuBrightnessCalculator(imageSize, inputArgs.symbolToPixelAreaRatio)
         val coreCpuBrightnessCalculator = CoreCpuBrightnessCalculator(imageSize, inputArgs.symbolToPixelAreaRatio)
         val areaGpuBrightnessCalculator = AreaGpuBrightnessCalculator(inputArgs.symbolToPixelAreaRatio)
         val simpleGpuBrightnessCalculator = SimpleGpuBrightnessCalculator(inputArgs.symbolToPixelAreaRatio)
@@ -62,15 +58,9 @@ class Asciificator {
     fun testProcessImage(bufferedImage: BufferedImage, symbolToPixelAreaRatio: Int, workDistributionType: WorkDistributionType) {
         val imageSize = Size(bufferedImage.width, bufferedImage.height)
 
-        val brightnessCalculatorRow = RowCpuBrightnessCalculator(
-            imageSize,
-            symbolToPixelAreaRatio,
-        )
-        val brightnessCalculatorArea = AreaCpuBrightnessCalculator(
-            symbolToPixelAreaRatio
-        )
+        val coreCpuBrightnessCalculator = CoreCpuBrightnessCalculator(imageSize, symbolToPixelAreaRatio)
 
-        brightnessCalculatorRow.calculateColor(bufferedImage)
+        coreCpuBrightnessCalculator.calculateColor(bufferedImage)
     }
 
 //    private fun getThreadWorkDistributor(workDistributionType: WorkDistributionType, symbolToPixelAreaRatio: Int, imageSize: Size) =
