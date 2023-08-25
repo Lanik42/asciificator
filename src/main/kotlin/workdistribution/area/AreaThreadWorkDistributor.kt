@@ -2,14 +2,19 @@ package workdistribution.area
 
 import Size
 import measureTimeMillis
-import workdistribution.ThreadWorkDistributor
 
 class AreaThreadWorkDistributor(
-    symbolToPixelAreaRatio: Int,
+    private val symbolToPixelAreaRatio: Int,
     imageSize: Size
-): ThreadWorkDistributor(symbolToPixelAreaRatio, imageSize) {
+) {
 
-    override fun getThreadInputData2DArray(): Array<Array<AreaInputData?>> {
+    private val extraRightPixels = imageSize.width % symbolToPixelAreaRatio
+    private val extraBottomPixels = imageSize.height % symbolToPixelAreaRatio
+
+    private val symbolsPerXDimension = imageSize.width / symbolToPixelAreaRatio
+    private val symbolsPerYDimension = imageSize.height / symbolToPixelAreaRatio
+
+    fun getThreadInputData2DArray(): Array<Array<AreaInputData?>> {
         val threadData2DArray = measureTimeMillis("thread data get") {
             val td = Array(symbolsPerYDimension) {
                 Array<AreaInputData?>(symbolsPerXDimension) { null }

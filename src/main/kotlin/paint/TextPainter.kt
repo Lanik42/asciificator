@@ -30,6 +30,7 @@ class TextPainter(
         val outputImage = getOutputImage(charWidth, charHeight, char2DArray.size - 1, char2DArray[0].size, colored)
         graphics.dispose()
 
+        // graphics2d for each thread
         graphics = outputImage.createGraphics()
         graphics.setupRender(font, char2DArray[0].size * charWidth, char2DArray.size * charHeight)
 
