@@ -27,6 +27,7 @@ const val SCALE_SYMBOLS_FIT = "-scale"
 //   * check IndexColorModel and color sizes. Perhaps  12 / 16 bit per pixel color would be better for colored paint
 // 5. GPU вычисления?
 // 6. Аскификация видео + аудио
+// 7. PRIORITY! Выпилить все List ради оптимизации
 
 // КОРУТИНЫ ГОВНО!!!!! 40мс на иницаилизацию!!!!! Тред пул на 6 потоков инициализируется за 2мс!!!!! Выпилить корутины!!!
 

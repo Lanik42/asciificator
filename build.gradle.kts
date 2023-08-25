@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.8.0"
     application
@@ -13,6 +15,7 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     api("com.aparapi:aparapi:3.0.0")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 tasks.test {
@@ -25,4 +28,12 @@ kotlin {
 
 application {
     mainClass.set("MainKt")
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

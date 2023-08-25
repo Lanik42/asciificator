@@ -109,7 +109,6 @@ class CoreCpuBrightnessCalculator(
                 green += color ushr 8 and 0xFF
                 blue += color ushr 0 and 0xFF
             }
-
         }
         val luminance = (red * 0.2126f + green * 0.7152f + blue * 0.0722f) / 255
 
