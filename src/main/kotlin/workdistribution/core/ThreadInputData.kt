@@ -1,15 +1,14 @@
 package workdistribution.core
 
-import Size
+import CustomSize
 
 data class ThreadInputData(
-    val threadAreaYOffset: Int,
-    val threadSymbolsHeight: Int,
-    val symbolAreaListByHeight: List<Area>,
+    val threadHeightInSymbols: Int,
+    val symbolSizeInPixels: CustomSize,
+    val lastRowExtraSymbols: Int = 0,
 )
 
 data class Area(
-    val x: Int,
     val y: Int,
-    val size: Size
+    val size: CustomSize
 )

@@ -14,14 +14,19 @@ class TextPainter(
     private val font: Font,
     private val symbolToPixelAreaRatio: Int,
 ) {
-    
+
     private companion object {
 
         const val SYMBOLS_SPACING_CORRECTION = -1
         const val LINE_HEIGHT_CORRECTION = -1
     }
 
-    fun drawImage(char2DArray: Array<CharArray>, color2DList: List<Array<Color>>, colored: Boolean, scaleSymbolsFit: Boolean): BufferedImage {
+    fun drawImage(
+        char2DArray: Array<CharArray>,
+        color2DList: Array<Array<Color>>,
+        colored: Boolean,
+        scaleSymbolsFit: Boolean
+    ): BufferedImage {
         var graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().apply {
             this.font = font
         }
@@ -40,7 +45,7 @@ class TextPainter(
             } else {
                 draw(graphics, char2DArray, charHeight, charWidth)
             }
-        }
+        } // first vid is 75.2mb
         graphics.dispose()
 
         return outputImage
@@ -65,11 +70,10 @@ class TextPainter(
     }
 
     private fun Graphics2D.setupRender(font: Font, fillWidth: Int, fillHeight: Int) {
-        setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-        setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY)
-        setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON)
-        setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
-        setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+        setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
+        setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF)
+        setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
+        setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
         setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
         color = AwtColor.WHITE
         this.font = font
@@ -79,11 +83,10 @@ class TextPainter(
     private fun drawColored(
         graphics2D: Graphics2D,
         char2DArray: Array<CharArray>,
-        color2DList: List<Array<Color>>,
+        color2DList: Array<Array<Color>>,
         charHeight: Int,
         charWidth: Int
     ) {
-        // А что если не менять цвет для каждого символа, а сначала рисовать все символы одного цвета, потом другого и тд?
         char2DArray.forEachIndexed { yIndex, charArray ->
             charArray.forEachIndexed { xIndex, char ->
                 val color = color2DList[yIndex][xIndex]

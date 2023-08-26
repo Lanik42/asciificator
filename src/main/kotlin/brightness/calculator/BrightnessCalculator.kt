@@ -7,5 +7,5 @@ abstract class BrightnessCalculator(
     protected val symbolToPixelAreaRatio: Int,
 ) {
 
-    abstract fun calculateColor(image: BufferedImage): List<Array<Color>>
+    abstract fun calculateBrightness(image: BufferedImage): Array<Array<Color>>
 }

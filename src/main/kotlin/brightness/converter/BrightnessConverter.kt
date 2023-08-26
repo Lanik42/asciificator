@@ -1,7 +1,6 @@
 package brightness.converter
 
 import Color
-import measureTimeMillis
 
 class BrightnessConverter(
     private val colored: Boolean
@@ -19,7 +18,7 @@ class BrightnessConverter(
         // @#%8&*c.
         // #@oi!;"'`
         // #@%8&*oi!"`.
-        const val SYMBOLS_BY_BRIGHTNESS = "\$@B%8&WM#*oahkbdpqcnxrjft-+~i!lI;:,^."
+        const val SYMBOLS_BY_BRIGHTNESS = "@B%8&WM#*oahkbdpqcnxrjft-+~i!lI;:,^. "
         const val SYMBOLS_BY_BRIGHTNESS_COLORED = "@"
     }
 
@@ -31,11 +30,11 @@ class BrightnessConverter(
         index * brightnessStep
     }
 
-    fun convertToSymbols(color2DList: List<Array<Color>>): Array<CharArray> {
-        val symbols2DArray = Array(color2DList.size) { CharArray(color2DList[0].size) }
+    fun convertToSymbols(brightness2DList: Array<Array<Color>>): Array<CharArray> {
+        val symbols2DArray = Array(brightness2DList.size) { CharArray(brightness2DList[0].size) }
 
-        color2DList.forEachIndexed { x, colorArray ->
-            colorArray.forEachIndexed { y, colorInfo ->
+        brightness2DList.forEachIndexed { x, brightnessArray ->
+            brightnessArray.forEachIndexed { y, colorInfo ->
                 symbols2DArray[x][y] = convert(colorInfo.brightness)
             }
         }

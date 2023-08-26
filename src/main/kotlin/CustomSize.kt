@@ -1,4 +1,4 @@
-data class Size (
+data class CustomSize(
     val width: Int,
     val height: Int
 )

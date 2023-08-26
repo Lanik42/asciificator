@@ -1,11 +1,11 @@
 package workdistribution.area
 
-import Size
+import CustomSize
 import measureTimeMillis
 
 class AreaThreadWorkDistributor(
     private val symbolToPixelAreaRatio: Int,
-    imageSize: Size
+    imageSize: CustomSize
 ) {
 
     private val extraRightPixels = imageSize.width % symbolToPixelAreaRatio
@@ -22,7 +22,7 @@ class AreaThreadWorkDistributor(
 
             defineThreadWorkDistribution(td)
             td
-        }
+        }.first
 
         return threadData2DArray
     }
@@ -49,7 +49,7 @@ class AreaThreadWorkDistributor(
                         continue
                     }
 
-                    val size = Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)
+                    val size = CustomSize(symbolToPixelAreaRatio, symbolToPixelAreaRatio)
                     threadData2DArray[y][x] = AreaInputData(
                         areaSize = size,
                         areaXOffset = x,
@@ -70,7 +70,7 @@ class AreaThreadWorkDistributor(
      */
 
     private fun handleLastYArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
-        val size = Size(symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
+        val size = CustomSize(symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
 
         val inputThreadData = AreaInputData(
             areaSize = size,
@@ -82,7 +82,7 @@ class AreaThreadWorkDistributor(
     }
 
     private fun handleLastXArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
-        val size = Size(extraRightPixels + symbolToPixelAreaRatio, symbolToPixelAreaRatio)
+        val size = CustomSize(extraRightPixels + symbolToPixelAreaRatio, symbolToPixelAreaRatio)
 
         val inputThreadData = AreaInputData(
             areaSize = size,
@@ -94,7 +94,7 @@ class AreaThreadWorkDistributor(
     }
 
     private fun handleLastXYArea(inputThreadDataArray: Array<Array<AreaInputData?>>, xOffset: Int, yOffset: Int) {
-        val size = Size(extraRightPixels + symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
+        val size = CustomSize(extraRightPixels + symbolToPixelAreaRatio, extraBottomPixels + symbolToPixelAreaRatio)
 
         val inputThreadData = AreaInputData(
             areaSize = size,
