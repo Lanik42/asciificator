@@ -1,9 +1,9 @@
 package workdistribution.area
 
-import Size
+import CustomSize
 
 data class AreaInputData(
-    val areaSize: Size,
+    val areaSize: CustomSize,
     val areaXOffset: Int,
     val areaYOffset: Int,
 )

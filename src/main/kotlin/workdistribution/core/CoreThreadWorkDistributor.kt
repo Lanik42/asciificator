@@ -1,42 +1,40 @@
 package workdistribution.core
 
-import Size
+import CustomSize
 
 class CoreThreadWorkDistributor(
     private val symbolToPixelAreaRatio: Int,
-    imageSize: Size
+    imageSize: CustomSize
 ) {
 
-    private val extraBottomPixels = imageSize.height % symbolToPixelAreaRatio
+    private val extraBottomSymbols = imageSize.height % symbolToPixelAreaRatio
     private val symbolsPerYDimension = imageSize.height / symbolToPixelAreaRatio
 
     fun getThreadInputData2DArray(): Array<ThreadInputData?> {
-        val threadDataArray = Array<ThreadInputData?>(ThreadManager.threadCount) { null }
+        val rowData = Array<ThreadInputData?>(ThreadManager.threadCount) { null }
 
-        defineThreadWorkDistribution(threadDataArray)
+        defineThreadWorkDistribution(rowData)
 
-        return threadDataArray
+        return rowData
     }
 
-    private fun defineThreadWorkDistribution(threadDataArray: Array<ThreadInputData?>) {
+    private fun defineThreadWorkDistribution(rowData: Array<ThreadInputData?>) {
         val lastYAreaIndex = ThreadManager.threadCount - 1
         val threadHeightInSymbols = symbolsPerYDimension / ThreadManager.threadCount
 
         for (y in 0..lastYAreaIndex) {
             if (y == lastYAreaIndex) {
-                handleLastYArea(threadDataArray, lastYAreaIndex)
-                continue
+                rowData[y] = ThreadInputData(
+                    threadHeightInSymbols = threadHeightInSymbols,
+                    symbolSizeInPixels = CustomSize(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
+                    lastRowExtraSymbols = symbolsPerYDimension - threadHeightInSymbols * (ThreadManager.threadCount - 1) - threadHeightInSymbols,
+                )
+                break
             }
 
-            val symbolAreaListByHeight = mutableListOf<Area>()
-            for (areaY in 0 until threadHeightInSymbols) {
-                symbolAreaListByHeight.add(Area(0, areaY, Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)))
-            }
-
-            threadDataArray[y] = ThreadInputData(
-                threadAreaYOffset = y,
-                threadSymbolsHeight = threadHeightInSymbols,
-                symbolAreaListByHeight = symbolAreaListByHeight,
+            rowData[y] = ThreadInputData(
+                threadHeightInSymbols = threadHeightInSymbols,
+                symbolSizeInPixels = CustomSize(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
             )
         }
     }
@@ -45,25 +43,21 @@ class CoreThreadWorkDistributor(
      * Этот метод используется для обработки ситуации, когда высота картинки не ровно поделилась на заданный
      * symbolToPixelAreaRatio, и нет возможности поделить всю работу между потоками равномерно
      *
-     * Нижние зоны по y берут на себя невошедшие пиксели снизу
+     * Нижние зоны по y берут на себя невошедшие символы снизу
      */
 
-    private fun handleLastYArea(threadDataArray: Array<ThreadInputData?>, yIndex: Int) {
-        val threadHeightInSymbols = symbolsPerYDimension % (ThreadManager.threadCount - 1)
 
-        val symbolAreaListByHeight = mutableListOf<Area>()
-        for (areaY in 0 until threadHeightInSymbols - 1) {
-            symbolAreaListByHeight.add(Area(0, areaY, Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio)))
-        }
-        if (threadHeightInSymbols != 0) {
-            symbolAreaListByHeight.add(Area(0, threadHeightInSymbols, Size(symbolToPixelAreaRatio, symbolToPixelAreaRatio + extraBottomPixels)))
-        }
+    // TODO зарефачить это так, чтобы не последний тред съедал нижние пиксели, а выделялся еще один поток, который бы их обработал
+    private fun handleLastYArea(threadDataArray: Array<ThreadInputData?>, yIndex: Int) {
+        val threadHeightInSymbols = symbolsPerYDimension / ThreadManager.threadCount
 
         val inputThreadData = ThreadInputData(
-            threadAreaYOffset = yIndex,
-            threadSymbolsHeight = threadHeightInSymbols,
-            symbolAreaListByHeight = symbolAreaListByHeight,
+            threadHeightInSymbols = threadHeightInSymbols,
+            symbolSizeInPixels = CustomSize(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
+            lastRowExtraSymbols = extraBottomSymbols
         )
         threadDataArray[yIndex] = inputThreadData
     }
+
+
 }

@@ -1,11 +1,11 @@
 
-fun <T> measureTimeMillis(label: String? = null, function: () -> T): T {
+fun <T> measureTimeMillis(label: String? = null, function: () -> T): Pair<T, Long> {
     val start = System.currentTimeMillis()
     val result = function()
     val end = System.currentTimeMillis()
 
     println("${label.orEmpty()} elapsed time: ${end - start}")
-    return result
+    return result to end - start
 }
 
 fun <T> measureTimeNanos(label: String? = null, function: () -> T): Pair<T, Long> {

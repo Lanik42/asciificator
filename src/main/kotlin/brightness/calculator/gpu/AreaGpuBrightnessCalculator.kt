@@ -1,8 +1,8 @@
 package brightness.calculator.gpu
 
 import Color
+import CustomSize
 import GpuCalculator
-import Size
 import brightness.calculator.BrightnessCalculator
 import kotlinx.coroutines.*
 import measureTimeMillis
@@ -16,15 +16,15 @@ class AreaGpuBrightnessCalculator(
 
     private var bufferedImage: BufferedImage? = null
 
-    override fun calculateColor(image: BufferedImage): List<Array<Color>> {
+    override fun calculateBrightness(image: BufferedImage): Array<Array<Color>> {
         bufferedImage = image
 
         val threadData2DArray = measureTimeMillis {
             AreaThreadWorkDistributor(
                 symbolToPixelAreaRatio,
-                Size(image.width, image.height)
+                CustomSize(image.width, image.height)
             ).getThreadInputData2DArray()
-        }
+        }.first
 
         measureTimeMillis("brightness calculation") {
             GpuCalculator().run(threadData2DArray, image, symbolToPixelAreaRatio)
@@ -42,7 +42,7 @@ class AreaGpuBrightnessCalculator(
 
         bufferedImage = null
         //    brightness2DArray
-        return listOf() // TODO заглушка
+        return arrayOf() // TODO заглушка
     }
 
     // Improve: сразу создавать 2d массив, чтобы потом не перекидывать данные
@@ -71,7 +71,7 @@ class AreaGpuBrightnessCalculator(
     }
 
 
-    private fun getColorData(xOffset: Int, yOffset: Int, size: Size): Array<IntArray> {
+    private fun getColorData(xOffset: Int, yOffset: Int, size: CustomSize): Array<IntArray> {
         val colorArray = Array(size.height) { IntArray(size.width) }
 
         for (y in 0 until size.height) {

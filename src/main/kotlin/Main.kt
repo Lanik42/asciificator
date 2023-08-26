@@ -1,4 +1,13 @@
+import org.opencv.core.Core
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.MatOfInt
+import org.opencv.imgcodecs.Imgcodecs
+import java.awt.image.BufferedImage
+import java.awt.image.DataBufferByte
 import java.io.File
+import java.io.IOException
+import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 
@@ -32,54 +41,62 @@ const val SCALE_SYMBOLS_FIT = "-scale"
 // КОРУТИНЫ ГОВНО!!!!! 40мс на иницаилизацию!!!!! Тред пул на 6 потоков инициализируется за 2мс!!!!! Выпилить корутины!!!
 
 fun main(args: Array<String>) {
+    initOpenCV()
+
     val inputArgs = args.parse()
 
-    val file = File(inputArgs.path)
-    val bufferedImage = ImageIO.read(file)
-
-    Asciificator().processImage(bufferedImage, inputArgs)
+    measureTimeMillis("overall") {
+        runProcessing(inputArgs)
+    }
 
     exitProcess(0)
 }
 
-private fun Array<String>.parse(): InputArgs {
-    val nameToValueMap = getArgNameToValueMap()
-    return nameToValueMap.parseMapToInputArgs()
-}
+private fun runProcessing(inputArgs: InputArgs) {
 
-private fun Array<String>.getArgNameToValueMap(): Map<String, String> {
-    val argNameToValueMap = mutableMapOf<String, String>()
+    val video = true
+    if (video) {
+        VideoProcessor.processVideo2(inputArgs)
+    } else {
+        val file = File(inputArgs.path)
+        val bufferedImage = ImageIO.read(file)
 
-    for (i in 0..lastIndex step 2) {
-        if (i + 1 >= size || get(i + 1).startsWith("-")) {
-            error("Wrong input format! Each argument should be followed by value. Missing value for argument ${get(i)}.")
+        val asciiImage = Asciificator().processImage(bufferedImage, inputArgs.copy(outPath = inputArgs.outPath))
+        measureTimeMillis("write") {
+            writeImageCV(asciiImage, inputArgs.outPath)
         }
-
-        argNameToValueMap[get(i)] = get(i+1)
     }
-
-    return argNameToValueMap
 }
 
-private fun Map<String, String>.parseMapToInputArgs(): InputArgs {
-    val path = get(ABSOLUTE_FILE_PATH) ?: error("Path (-path) argument not specified!")
-    val symbolToPixelAreaRatio = get(SYMBOL_TO_PIXEL_AREA_RATIO) ?: error("Ratio (-ratio) argument not specified!")
-    val colored = get(COLORED) ?: error("Colored (-colored) argument not specified!")
-    val outFormat = get(OUT_FORMAT) ?: error("Out format (-format) argument not specified!")
-    val outPath = get(OUT_PATH) ?: error("Out path (-output) argument not specified!")
-    val fontSize = get(FONT_SIZE) ?: error("Font size (-fontSize) argument not specified!")
-    val scale = get(SCALE_SYMBOLS_FIT) ?: error("Scale (-scale) argument not specified!")
+// opencv x2 к скорости записи, имба не контрится, конвертация в mat занимает максимум 3мс времени
+private fun writeImageCV(image: BufferedImage, path: String) {
+    try {
+        val qualityParams = MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 60)
+        if (image.type == BufferedImage.TYPE_BYTE_GRAY) {
+            Imgcodecs.imwrite("$path.jpg", image.toMat(CvType.CV_8UC1), qualityParams)
+        } else {
+            Imgcodecs.imwrite("$path.jpg", image.toMat(CvType.CV_8UC3), qualityParams)
+        }
+    } catch (ex: IOException) {
+        ex.printStackTrace()
+    }
+}
 
+fun BufferedImage.toMat(type: Int): Mat {
+    val mat = Mat(height, width, type)
+    val pixels = (raster.dataBuffer as DataBufferByte).data
+    return mat.apply { put(0, 0, pixels) }
+}
 
-    return InputArgs(
-        path = path,
-        symbolToPixelAreaRatio = symbolToPixelAreaRatio.toInt(),
-        fontSize = fontSize.toInt(),
-        colored = colored.toBoolean(),
-        outFormat = outFormat,
-        outPath = outPath,
-        scale = scale.toBoolean(),
-    )
+private fun <T> List<Future<T>>.awaitAllWithResult(): List<T> =
+    map { it.get() }
+
+fun <T> List<Future<T>>.awaitAll() {
+    forEach { it.get() }
+}
+
+private fun initOpenCV() {
+    System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 }
 
 //private fun benchmarkDifferentArgs(bufferedImage: BufferedImage) {
