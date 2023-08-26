@@ -9,37 +9,11 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
-import kotlin.math.floor
 
 object VideoProcessor {
 
     // Взято почти с потолка, с таким значением быстро идет прогон
     private const val BLOCK_SIZE = 10
-
-    fun processVideo(inputArgs: InputArgs) {
-        val futures = mutableListOf<Future<Unit>>()
-
-        val videoCapture = VideoCapture(inputArgs.path)
-        val frameCount = videoCapture.get(Videoio.CAP_PROP_FRAME_COUNT)
-        val fps = videoCapture.get(Videoio.CAP_PROP_FPS)
-        val framesPerThread = (frameCount / ThreadManager.threadCount).toInt()
-        val outDirectory = inputArgs.outPath.substringBeforeLast("\\")
-        videoCapture.release()
-
-        // TODO другой вариант многопотока - не выделяем на каждый поток по n кадров, а гоняем по потокам кадры:
-        // TODO обработали 0-11 кадры - записали, далее обработали 12-23 кадры - записали и тд
-        repeat(ThreadManager.threadCount) { offset ->
-            val framesOffset = frameCount / ThreadManager.threadCount * offset
-            ThreadManager.executors.submit<Unit> {
-                captureFrames(inputArgs.path, outDirectory, floor(framesOffset), framesPerThread)
-                createAsciiFrames(offset, fps, outDirectory, floor(framesOffset), framesPerThread, inputArgs)
-            }.also { futures.add(it) }
-        }
-
-        futures.awaitAll()
-
-        mergeVideos(outDirectory, fps)
-    }
 
     private var awaitTime = 0L
     private var writeTime = 0L
@@ -92,55 +66,6 @@ object VideoProcessor {
 
         videoCaptureArray.forEach { it.release() }
         println("Await time: $awaitTime, write time: $writeTime\nAverage await time: ${awaitTime / runAmount}, average write time: ${writeTime / runAmount}")
-    }
-
-    private fun captureFrames(filePath: String, outDirectory: String, frameOffset: Double, frameCount: Int) {
-        val videoCapture = VideoCapture(filePath)
-        videoCapture.set(Videoio.CAP_PROP_POS_FRAMES, frameOffset)
-        val qualityParams = MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 60)
-
-        var absoluteFrameIndex = frameOffset.toInt()
-        repeat(frameCount) {
-            val mat = Mat()
-            videoCapture.read(mat)
-            Imgcodecs.imwrite("$outDirectory\\frame${absoluteFrameIndex++}.jpg", mat, qualityParams)
-        }
-
-        videoCapture.release()
-    }
-
-    private fun createAsciiFrames(
-        threadIndex: Int,
-        originalFps: Double,
-        framesDirectory: String,
-        frameStart: Double,
-        frameCount: Int,
-        inputArgs: InputArgs,
-    ) {
-        val asciificator = Asciificator()
-        var height: Double? = null
-        var width: Double? = null
-        val videoWriter by lazy {
-            VideoWriter(
-                "$framesDirectory\\output$threadIndex.mp4",
-                VideoWriter.fourcc('X', '2', '6', '4'),
-                originalFps,
-                Size(Point(width!!, height!!)),
-                false
-            )
-        }
-
-        repeat(frameCount) { frameIndex ->
-            val imageFile = File(framesDirectory, "frame${(frameStart + frameIndex).toInt()}.jpg")
-            //  test cv imread + convert vs native read
-            val asciiImage = asciificator.processImage(ImageIO.read(imageFile), inputArgs.copy(colored = false))
-            height = asciiImage.height.toDouble()
-            width = asciiImage.width.toDouble()
-
-            videoWriter.write(asciiImage.toMat(CvType.CV_8UC1))
-        }
-
-        videoWriter.release()
     }
 
     private fun getFrames(frameOffset: Int, videoCapture: VideoCapture, frame2DArray: Array<Mat?>) {
@@ -196,37 +121,4 @@ object VideoProcessor {
         } catch (e: Exception) {
             null
         }
-
-    private fun mergeVideos(framesDirectory: String, originalFps: Double) {
-        var height: Double? = null
-        var width: Double? = null
-        val videoWriter by lazy {
-            VideoWriter(
-                "$framesDirectory\\output.mp4",
-                VideoWriter.fourcc('H', '2', '6', '4'),
-                originalFps,
-                Size(Point(width!!, height!!)),
-                false
-            )
-        }
-        val mat = Mat()
-
-        repeat(ThreadManager.threadCount) {
-            measureTimeMillis("merge video $it") {
-                val videoCapture = VideoCapture("$framesDirectory\\output$it.mp4")
-                height = videoCapture.get(Videoio.CAP_PROP_FRAME_HEIGHT)
-                width = videoCapture.get(Videoio.CAP_PROP_FRAME_WIDTH)
-                val frameCount = videoCapture.get(Videoio.CAP_PROP_FRAME_COUNT)
-
-                repeat(frameCount.toInt()) {
-                    videoCapture.read(mat)
-
-                    videoWriter.write(mat)
-                }
-
-                videoCapture.release()
-            }
-        }
-        videoWriter.release()
-    }
 }
