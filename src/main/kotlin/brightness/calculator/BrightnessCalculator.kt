@@ -1,11 +1,11 @@
 package brightness.calculator
 
-import Color
+import CustomColor
 import java.awt.image.BufferedImage
 
 abstract class BrightnessCalculator(
     protected val symbolToPixelAreaRatio: Int,
 ) {
 
-    abstract fun calculateBrightness(image: BufferedImage): Array<Array<Color>>
+    abstract fun calculateBrightness(image: BufferedImage): Array<Array<CustomColor>>
 }
