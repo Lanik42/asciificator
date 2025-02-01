@@ -1,3 +1,4 @@
+import java.util.concurrent.Future
 
 fun <T> measureTimeMillis(label: String? = null, function: () -> T): Pair<T, Long> {
     val start = System.currentTimeMillis()
@@ -25,4 +26,11 @@ suspend fun <T> measureTimeMillisSus(label: String? = null, function: suspend ()
 
     println("${label.orEmpty()} elapsed time: ${end - start}")
     return result
+}
+
+private fun <T> List<Future<T>>.awaitAllWithResult(): List<T> =
+    map { it.get() }
+
+fun <T> List<Future<T>>.awaitAll() {
+    forEach { it.get() }
 }

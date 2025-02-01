@@ -1,4 +1,5 @@
-import org.opencv.core.Core
+import org.bytedeco.javacpp.Loader
+import org.bytedeco.javacpp.opencv_java
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfInt
@@ -7,7 +8,6 @@ import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 
@@ -37,6 +37,10 @@ const val SCALE_SYMBOLS_FIT = "-scale"
 // 5. GPU вычисления?
 // 6. Аскификация видео + аудио
 // 7. PRIORITY! Выпилить все List ради оптимизации
+// 8. PRIORITY!!!! Сделать подгон symbolToPixelArea под формат видео / изображения, пофиксит кривой размер выходного результата
+//// ли по крайней мере сделать разные параметры под ширину и высоту
+//// 9. PRIORITY!!!! Избавиться от разделения на потоки при подсчете яркости для видео, тк обработка видео и так запускает обработку
+//// n (кол-во потоков) кадров одновременно, нет смысла для каждого кадра еще разделять работу на 12 потоков, в теории ухудшает производительность
 
 // КОРУТИНЫ ГОВНО!!!!! 40мс на иницаилизацию!!!!! Тред пул на 6 потоков инициализируется за 2мс!!!!! Выпилить корутины!!!
 
@@ -52,19 +56,19 @@ fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+private val VIDEO_EXTENSIONS = listOf("mp4", "avi")
+
 private fun runProcessing(inputArgs: InputArgs) {
 
-    val video = true
+    val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
     if (video) {
         VideoProcessor.processVideo2(inputArgs)
     } else {
         val file = File(inputArgs.path)
         val bufferedImage = ImageIO.read(file)
 
-        val asciiImage = Asciificator().processImage(bufferedImage, inputArgs.copy(outPath = inputArgs.outPath))
-        measureTimeMillis("write") {
-            writeImageCV(asciiImage, inputArgs.outPath)
-        }
+        val asciiImage = Asciificator().processImage(bufferedImage, inputArgs)
+        writeImageCV(asciiImage, inputArgs.outPath)
     }
 }
 
@@ -88,16 +92,11 @@ fun BufferedImage.toMat(type: Int): Mat {
     return mat.apply { put(0, 0, pixels) }
 }
 
-private fun <T> List<Future<T>>.awaitAllWithResult(): List<T> =
-    map { it.get() }
-
-fun <T> List<Future<T>>.awaitAll() {
-    forEach { it.get() }
-}
-
 private fun initOpenCV() {
-    System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
+    Loader.load(opencv_java::class.java)
+    // System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 }
+
 
 //private fun benchmarkDifferentArgs(bufferedImage: BufferedImage) {
 //    val differentArgsList = listOf(

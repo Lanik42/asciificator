@@ -1,6 +1,6 @@
 package brightness.converter
 
-import Color
+import CustomColor
 
 class BrightnessConverter(
     private val colored: Boolean
@@ -18,7 +18,10 @@ class BrightnessConverter(
         // @#%8&*c.
         // #@oi!;"'`
         // #@%8&*oi!"`.
-        const val SYMBOLS_BY_BRIGHTNESS = "@B%8&WM#*oahkbdpqcnxrjft-+~i!lI;:,^. "
+
+        // Не использовать @, тк этот символ имеет отличающуюся ширину от остальных, из-за этого невозможно сделать все строки одной
+        // ширины =(
+        const val SYMBOLS_BY_BRIGHTNESS = "B%8&WM#*oahkbdpqcnxrjft-~i!lI;:,^. "
         const val SYMBOLS_BY_BRIGHTNESS_COLORED = "@"
     }
 
@@ -30,7 +33,7 @@ class BrightnessConverter(
         index * brightnessStep
     }
 
-    fun convertToSymbols(brightness2DList: Array<Array<Color>>): Array<CharArray> {
+    fun convertToSymbols(brightness2DList: Array<Array<CustomColor>>): Array<CharArray> {
         val symbols2DArray = Array(brightness2DList.size) { CharArray(brightness2DList[0].size) }
 
         brightness2DList.forEachIndexed { x, brightnessArray ->

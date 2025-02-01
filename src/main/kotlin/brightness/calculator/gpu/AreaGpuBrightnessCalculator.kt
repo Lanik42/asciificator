@@ -1,10 +1,15 @@
 package brightness.calculator.gpu
 
-import Color
+import CustomColor
 import CustomSize
 import GpuCalculator
 import brightness.calculator.BrightnessCalculator
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import measureTimeMillis
 import workdistribution.area.AreaInputData
 import workdistribution.area.AreaThreadWorkDistributor
@@ -16,7 +21,7 @@ class AreaGpuBrightnessCalculator(
 
     private var bufferedImage: BufferedImage? = null
 
-    override fun calculateBrightness(image: BufferedImage): Array<Array<Color>> {
+    override fun calculateBrightness(image: BufferedImage): Array<Array<CustomColor>> {
         bufferedImage = image
 
         val threadData2DArray = measureTimeMillis {

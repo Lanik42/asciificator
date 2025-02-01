@@ -1,14 +1,12 @@
 package paint
 
-import Color
-import measureTimeMillis
+import CustomColor
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.Rectangle
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.awt.Color as AwtColor
-
 
 class TextPainter(
     private val font: Font,
@@ -18,17 +16,17 @@ class TextPainter(
     private companion object {
 
         const val SYMBOLS_SPACING_CORRECTION = -1
-        const val LINE_HEIGHT_CORRECTION = -1
+        const val LINE_HEIGHT_CORRECTION = -3
     }
 
     fun drawImage(
         char2DArray: Array<CharArray>,
-        color2DList: Array<Array<Color>>,
+        color2DList: Array<Array<CustomColor>>,
         colored: Boolean,
         scaleSymbolsFit: Boolean
     ): BufferedImage {
         var graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().apply {
-            this.font = font
+            setupRender(font)
         }
 
         val (charWidth, charHeight) = getCharSize(scaleSymbolsFit, graphics)
@@ -37,15 +35,15 @@ class TextPainter(
 
         // graphics2d for each thread
         graphics = outputImage.createGraphics()
-        graphics.setupRender(font, char2DArray[0].size * charWidth, char2DArray.size * charHeight)
+        graphics.setupRender(font)
+        graphics.fill(Rectangle(char2DArray[0].size * charWidth, char2DArray.size * charHeight))
 
-        measureTimeMillis("draw") {
-            if (colored) {
-                drawColored(graphics, char2DArray, color2DList, charHeight, charWidth)
-            } else {
-                draw(graphics, char2DArray, charHeight, charWidth)
-            }
-        } // first vid is 75.2mb
+        if (colored) {
+            drawColored(graphics, char2DArray, color2DList, charHeight, charWidth)
+        } else {
+            draw(graphics, char2DArray, charHeight, charWidth)
+        }
+
         graphics.dispose()
 
         return outputImage
@@ -53,7 +51,7 @@ class TextPainter(
 
     private fun getCharSize(scaleSymbolsFit: Boolean, graphics2D: Graphics2D): Pair<Int, Int> =
         if (scaleSymbolsFit) {
-            graphics2D.fontMetrics.charWidth('@') + SYMBOLS_SPACING_CORRECTION to graphics2D.fontMetrics.ascent + LINE_HEIGHT_CORRECTION
+            graphics2D.fontMetrics.charWidth('B') + SYMBOLS_SPACING_CORRECTION to graphics2D.fontMetrics.ascent + LINE_HEIGHT_CORRECTION
         } else {
             symbolToPixelAreaRatio to symbolToPixelAreaRatio
         }
@@ -69,7 +67,7 @@ class TextPainter(
         }
     }
 
-    private fun Graphics2D.setupRender(font: Font, fillWidth: Int, fillHeight: Int) {
+    private fun Graphics2D.setupRender(font: Font) {
         setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
         setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF)
         setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
@@ -77,13 +75,12 @@ class TextPainter(
         setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
         color = AwtColor.WHITE
         this.font = font
-        fill(Rectangle(fillWidth, fillHeight))
     }
 
     private fun drawColored(
         graphics2D: Graphics2D,
         char2DArray: Array<CharArray>,
-        color2DList: Array<Array<Color>>,
+        color2DList: Array<Array<CustomColor>>,
         charHeight: Int,
         charWidth: Int
     ) {
