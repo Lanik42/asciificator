@@ -1,3 +1,4 @@
+import brightness.calculator.cpu.CoreCpuBrightnessCalculator
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfByte
@@ -15,11 +16,10 @@ import java.util.Collections
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
 
-
 object VideoProcessor {
 
     // Подобрано эмпирически
-    private const val BLOCK_SIZE = 10
+    private var BLOCK_SIZE = 20
 
     // Нужны ли аскификаторы по количеству потоков? - сейчас кол-во потоков обрабатывает реализация в GpuColorCalculator
     private val asciificator = Asciificator()
@@ -33,6 +33,10 @@ object VideoProcessor {
                     "-c:v copy -map 0:v:0 -map 1:a:0 " +
                     "\"${getOutputVideoName(inputArgs, " ff")}\""
         )
+
+        println("avg paint time: ${Asciificator.paintTime.toDouble() / 1000000 / Asciificator.frameCount}ms")
+        Asciificator.paintTime = 0
+        Asciificator.frameCount = 0
 
         do {
             println("waiting")
@@ -66,6 +70,14 @@ object VideoProcessor {
     }
 
     private fun opencvV1(inputArgs: InputArgs) {
+        println(
+            "ffmpeg -i \"${getOutputVideoName(inputArgs, " ff")}\" " +
+                    "-maxrate 12M " +
+                    "-minrate 2M " +
+                    "-bufsize 6M " +
+                    "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
+                    "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
+        )
         val preVideoCapture = VideoCapture(inputArgs.path)
         val frameCount = preVideoCapture.get(Videoio.CAP_PROP_FRAME_COUNT)
         val fps = preVideoCapture.get(Videoio.CAP_PROP_FPS)
@@ -134,7 +146,6 @@ object VideoProcessor {
     private fun getFrames(frameOffset: Int, videoCapture: VideoCapture, frameArray: Array<Mat>) {
         videoCapture.set(Videoio.CAP_PROP_POS_FRAMES, frameOffset.toDouble())
         frameArray.forEach(videoCapture::read)
-
     }
 
     private fun getAsciiFrames(
@@ -142,16 +153,29 @@ object VideoProcessor {
         inputArgs: InputArgs,
         cvType: Int
     ): Array<Mat> {
-        frameArray.forEachIndexed { index, frame ->
-            try {
-                frameArray[index] = asciificator.processImage(frame.toBufferedImage(), inputArgs)
-                    .toMat(cvType)
-            } catch (e: Throwable) {
-                // Починить багос, который возникает на последних кадрах, когда мы чуть переезжаем за
-                // общее число кадров в видео
-                // ПОХОЖЕ НЕ ТОЛЬКО НА ПОСЛЕДНИХ КАДРАХ, ВСЕ ОЧЕНЬ ПЛОХО, ЛОМАЕТСЯ ЖЕСТКО, ИГНОРИМ THROWABLE
+        val bench = CoreCpuBrightnessCalculator.Bench()
+        measureTimeMillis("${frameArray.size} frames process") {
+            frameArray.forEachIndexed { index, frame ->
+                try {
+                    frameArray[index] =
+                        asciificator.processImage(frame.toBufferedImage(), inputArgs, bench)
+                            .toMat(cvType)
+                } catch (e: Throwable) {
+                    println(e.message)
+                    if (e.message?.contains("unknown exception") == true) {
+                        ""
+                    }
+                    // Починить багос, который возникает на последних кадрах, когда мы чуть переезжаем за
+                    // общее число кадров в видео
+                    // ПОХОЖЕ НЕ ТОЛЬКО НА ПОСЛЕДНИХ КАДРАХ, ВСЕ ОЧЕНЬ ПЛОХО, ЛОМАЕТСЯ ЖЕСТКО, ИГНОРИМ THROWABLE
+                }
             }
         }
+//        println(
+//            "frame count: ${bench.frameCount}\n" +
+//                    "avg fetch rgb time: ${bench.fetchRgbTime.toDouble() / bench.frameCount / 1000000}ms\n" +
+//                    "avg brightness calc time: ${bench.brightnessCalcTime.toDouble() / bench.frameCount / 1000000}ms"
+//        )
 
         return frameArray
     }

@@ -1,6 +1,7 @@
 package paint
 
 import CustomColor
+import measureTimeNanos
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.Rectangle
@@ -25,9 +26,10 @@ class TextPainter(
         colored: Boolean,
         scaleSymbolsFit: Boolean
     ): BufferedImage {
-        var graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().apply {
-            setupRender(font)
-        }
+        var graphics: Graphics2D =
+            BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().apply {
+                setupRender(font)
+            }
 
         val (charWidth, charHeight) = getCharSize(scaleSymbolsFit, graphics)
         val outputImage = getOutputImage(charWidth, charHeight, char2DArray.size - 1, char2DArray[0].size, colored)
@@ -38,10 +40,12 @@ class TextPainter(
         graphics.setupRender(font)
         graphics.fill(Rectangle(char2DArray[0].size * charWidth, char2DArray.size * charHeight))
 
-        if (colored) {
-            drawColored(graphics, char2DArray, color2DList, charHeight, charWidth)
-        } else {
-            draw(graphics, char2DArray, charHeight, charWidth)
+        measureTimeNanos("draw") {
+            if (colored) {
+                drawColored(graphics, char2DArray, color2DList, charHeight, charWidth)
+            } else {
+                draw(graphics, char2DArray, charHeight, charWidth)
+            }
         }
 
         graphics.dispose()
@@ -56,7 +60,13 @@ class TextPainter(
             symbolToPixelAreaRatio to symbolToPixelAreaRatio
         }
 
-    private fun getOutputImage(charWidth: Int, lineHeight: Int, linesAmount: Int, charAmount: Int, colored: Boolean): BufferedImage {
+    private fun getOutputImage(
+        charWidth: Int,
+        lineHeight: Int,
+        linesAmount: Int,
+        charAmount: Int,
+        colored: Boolean
+    ): BufferedImage {
         val outputImageWidth = charWidth * charAmount
         val outputImageHeight = lineHeight * linesAmount
 
@@ -68,11 +78,11 @@ class TextPainter(
     }
 
     private fun Graphics2D.setupRender(font: Font) {
-        setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
         setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF)
-        setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR)
         setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
         setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE)
+        setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_DISABLE)
+
         color = AwtColor.WHITE
         this.font = font
     }
@@ -84,17 +94,24 @@ class TextPainter(
         charHeight: Int,
         charWidth: Int
     ) {
+
         char2DArray.forEachIndexed { yIndex, charArray ->
             charArray.forEachIndexed { xIndex, char ->
                 val color = color2DList[yIndex][xIndex]
                 graphics2D.color = AwtColor(color.r, color.g, color.b)
 
+                // переписать на либу, которая умеет работать на GPU для отрисовки?
                 graphics2D.drawString(char.toString(), xIndex * charWidth, charHeight * yIndex)
             }
         }
     }
 
-    private fun draw(graphics2D: Graphics2D, char2DArray: Array<CharArray>, charHeight: Int, charWidth: Int) {
+    private fun draw(
+        graphics2D: Graphics2D,
+        char2DArray: Array<CharArray>,
+        charHeight: Int,
+        charWidth: Int
+    ) {
         graphics2D.color = AwtColor.BLACK
 
         char2DArray.forEachIndexed { yIndex, charArray ->
@@ -106,7 +123,7 @@ class TextPainter(
         // Работало бы классно, если бы все символы monospace шрифта были бы равны charWidth (а они должны быть ему равны)
         // Но в реальности что-то идет не так и символы не имеют charWidth ширину
 //        char2DArray.forEachIndexed { yIndex, charArray ->
-//            graphics2D.drawChars(charArray, 0, charArray.size, 0, lineHeight * yIndex)
+//            graphics2D.drawChars(charArray, 0, charArray.size, 0, charHeight * yIndex)
 //        }
     }
 }

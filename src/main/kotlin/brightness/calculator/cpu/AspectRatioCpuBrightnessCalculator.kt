@@ -4,40 +4,38 @@ import CustomColor
 import CustomSize
 import brightness.calculator.BrightnessCalculator
 import measureTimeNanos
-import workdistribution.core.CoreThreadWorkDistributor
+import workdistribution.core.AspectRatioCoreThreadWorkDistributor
 import workdistribution.core.ThreadInputData
 import workdistribution.core.ThreadManager
 import java.awt.image.BufferedImage
 import java.util.concurrent.Future
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
-
-class CoreCpuBrightnessCalculator(
+class AspectRatioCpuBrightnessCalculator(
     private val imageSize: CustomSize,
     symbolToPixelAreaRatio: Int,
 ) : BrightnessCalculator(symbolToPixelAreaRatio) {
 
     private var bufferedImage: BufferedImage? = null
 
-    private val symbolsPerXDimension = imageSize.width / symbolToPixelAreaRatio
-    private val symbolsPerYDimension = imageSize.height / symbolToPixelAreaRatio
+    private val scalingFactor =
+        sqrt(symbolToPixelAreaRatio.toDouble() * symbolToPixelAreaRatio / (imageSize.width * imageSize.height))
 
-    class Bench {
-
-        var frameCount = 0
-        var fetchRgbTime = 0L
-        var brightnessCalcTime = 0L
-    }
+    private val symbolsPerXDimension = (imageSize.width * scalingFactor).roundToInt()
+    private val symbolsPerYDimension = (imageSize.height * scalingFactor).roundToInt()
 
     override fun calculateBrightness(
         image: BufferedImage,
-        bench: Bench
+        bench: CoreCpuBrightnessCalculator.Bench
     ): Array<Array<CustomColor>> {
         bench.frameCount++
 
         bufferedImage = image
 
-        val threadDataArray = CoreThreadWorkDistributor(
-            symbolToPixelAreaRatio,
+        val threadDataArray = AspectRatioCoreThreadWorkDistributor(
+            symbolsPerXDimension,
+            symbolsPerYDimension,
             imageSize
         ).getThreadInputData2DArray()
 
@@ -46,23 +44,12 @@ class CoreCpuBrightnessCalculator(
         return brightnessList
     }
 
-//    ThreadManager.executors.forEachIndexed { index, executor ->
-//        executor.submit<Array<Array<CustomColor>?>> {
-//            val threadOffsetInSymbols = if (index == 0) {
-//                0
-//            } else {
-//                threadDataArray[index - 1]!!.threadHeightInSymbols * index
-//            }
-//
-//            getBrightnessByThread(threadDataArray[index], threadOffsetInSymbols)
-//        }.also { futureArray[index] = it }
-
     // 1st version = 800ms. 2nd - 650? (get pixels by area + remove flatMap to calculate averageBrightness) . 3rd - 450ms
     // TODO!!! Сейчас массив, который возвращает getBrighntessOuter, возвращает Array цветов для всей области из потока (1/12 картинки), либо придумать что делать здесь
     // TODO либо подогнать TextPainter
     private fun getBrightness(
         threadDataArray: Array<ThreadInputData?>,
-        bench: Bench
+        bench: CoreCpuBrightnessCalculator.Bench
     ): Array<Array<CustomColor>> {
         val futureArray = Array<Future<Array<Array<CustomColor>?>>?>(symbolsPerYDimension) { null }
         val colorArray = Array<Array<CustomColor>?>(symbolsPerYDimension) { null }
@@ -91,7 +78,7 @@ class CoreCpuBrightnessCalculator(
     private fun getBrightnessByThread(
         threadData: ThreadInputData?,
         threadOffsetInSymbols: Int,
-        bench: Bench,
+        bench: CoreCpuBrightnessCalculator.Bench,
     ): Array<Array<CustomColor>?> {
         requireNotNull(threadData)
 
@@ -109,7 +96,7 @@ class CoreCpuBrightnessCalculator(
         yOffset: Int,
         threadPixelSize: CustomSize,
         threadData: ThreadInputData,
-        bench: Bench,
+        bench: CoreCpuBrightnessCalculator.Bench,
     ): Array<Array<CustomColor>?> {
         val rgb2DArray = measureTimeNanos {
             getRgbData(yOffset = yOffset, size = threadPixelSize)
@@ -126,14 +113,14 @@ class CoreCpuBrightnessCalculator(
     private fun getRgbData(yOffset: Int, size: CustomSize): Array<IntArray> {
         val colorArray = Array(size.height) { IntArray(size.width) }
 
-        for (y in 0 until size.height step 2) {
+        for (y in 0 until size.height) {
             bufferedImage!!.getRGB(0, yOffset + y, size.width, 1, colorArray[y], 0, 0)
 
-            // Трум-трум лайфхаки ради 10% общего перфоманса
-            // Считываем только каждую вторую горизонтальную строку
-            if (y < size.height) {
-                colorArray[y + 1] = colorArray[y]
-            }
+            // Трум-трум лайфхаки ради 5% общего перфоманса
+            // Считываем только каждую вторую горизонтальную строку, так считывание занимает 0.15мс вместо условных 0.3мс, на картинку вроде особо не влияет
+//            if (y < size.height) {
+//                colorArray[y + 1] = colorArray[y]
+//            }
         }
 
         return colorArray
@@ -183,7 +170,7 @@ class CoreCpuBrightnessCalculator(
                     green += this[blockY][blockX] ushr 8 and 0xFF
                     blue += this[blockY][blockX] ushr 0 and 0xFF
                 } catch (e: Exception) {
-                    println(e.message)
+                    println()
                 }
             }
         }

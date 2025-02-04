@@ -15,7 +15,7 @@ fun <T> measureTimeNanos(label: String? = null, function: () -> T): Pair<T, Long
     val end = System.nanoTime()
 
     val elapsed = end - start
-  //  println("${label.orEmpty()} elapsed time: elapsed")
+//    println("${label.orEmpty()} elapsed time: $elapsed")
     return result to elapsed
 }
 
