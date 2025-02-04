@@ -19,18 +19,35 @@ enum class WorkDistributionType {
 
 class Asciificator {
 
-    // На InputArgs можно оставить выбор cpu / gpu
-    fun processImage(bufferedImage: BufferedImage, inputArgs: InputArgs): BufferedImage {
+    companion object Bench {
+
+        var paintTime = 0L
+        var frameCount = 0L
+    }
+
+    fun processImage(
+        bufferedImage: BufferedImage,
+        inputArgs: InputArgs,
+        bench: CoreCpuBrightnessCalculator.Bench = CoreCpuBrightnessCalculator.Bench()
+    ): BufferedImage {
+        frameCount++
         val imageSize = CustomSize(bufferedImage.width, bufferedImage.height)
 
         val coreCpuBrightnessCalculator = CoreCpuBrightnessCalculator(imageSize, inputArgs.symbolToPixelAreaRatio)
-        val color2DList = coreCpuBrightnessCalculator.calculateBrightness(bufferedImage)
+        val color2DList = coreCpuBrightnessCalculator.calculateBrightness(bufferedImage, bench)
 
-        val char2DArray = BrightnessConverter(inputArgs.colored).convertToSymbols(color2DList)
+        val char2DArray = measureTimeNanos("bright converter") {
+            BrightnessConverter(inputArgs.colored).convertToSymbols(color2DList)
+        }.first
 
         val font = Font(Font.MONOSPACED, Font.PLAIN, inputArgs.fontSize)  // меньше 11 шрифта все шакалится
 
-        return TextPainter(font, inputArgs.symbolToPixelAreaRatio)
-            .drawImage(char2DArray, color2DList, inputArgs.colored, inputArgs.scale)
+        val a = measureTimeNanos("paint") {
+            TextPainter(font, inputArgs.symbolToPixelAreaRatio)
+                .drawImage(char2DArray, color2DList, inputArgs.colored, inputArgs.scale)
+        }
+        paintTime += a.second
+
+        return a.first
     }
 }
