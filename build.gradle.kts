@@ -26,6 +26,18 @@ dependencies {
     implementation("org.bytedeco:javacv:1.4.4")
     implementation("org.bytedeco.javacpp-presets:ffmpeg:4.1-1.4.4")
     implementation("org.bytedeco:javacv-platform:1.4.4")
+
+    implementation("com.github.sarxos:webcam-capture:0.3.12")
+
+
+    //    implementation("org.bytedeco:javacv:1.5.8")
+//    implementation("org.bytedeco:ffmpeg-platform:5.1.2-1.5.8")
+//    implementation("org.bytedeco:javacv-platform:1.5.8")
+//
+//    implementation("org.bytedeco:opencv-platform-gpu:4.6.0-1.5.8")
+//    implementation("org.bytedeco:cuda:11.8-8.6-1.5.8")
+//    implementation("org.bytedeco:cuda-platform-redist:11.8-8.6-1.5.8")
+
     api("com.aparapi:aparapi:3.0.0")
     implementation(kotlin("stdlib-jdk8"))
 }

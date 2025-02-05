@@ -1,4 +1,4 @@
-package paint
+package paint.cpu
 
 import CustomColor
 import measureTimeNanos
@@ -9,7 +9,7 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.awt.Color as AwtColor
 
-class TextPainter(
+class CpuTextPainter(
     private val font: Font,
     private val symbolToPixelAreaRatio: Int,
 ) {
