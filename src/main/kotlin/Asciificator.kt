@@ -1,6 +1,6 @@
 import brightness.calculator.cpu.CoreCpuBrightnessCalculator
 import brightness.converter.BrightnessConverter
-import paint.TextPainter
+import paint.cpu.CpuTextPainter
 import java.awt.Font
 import java.awt.image.BufferedImage
 
@@ -43,7 +43,7 @@ class Asciificator {
         val font = Font(Font.MONOSPACED, Font.PLAIN, inputArgs.fontSize)  // меньше 11 шрифта все шакалится
 
         val a = measureTimeNanos("paint") {
-            TextPainter(font, inputArgs.symbolToPixelAreaRatio)
+            CpuTextPainter(font, inputArgs.symbolToPixelAreaRatio)
                 .drawImage(char2DArray, color2DList, inputArgs.colored, inputArgs.scale)
         }
         paintTime += a.second

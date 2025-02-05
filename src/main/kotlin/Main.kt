@@ -1,5 +1,10 @@
+import camera.CameraEncoder
 import org.bytedeco.javacpp.Loader
+import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_java
+import org.bytedeco.javacv.Java2DFrameConverter
+import org.bytedeco.javacv.OpenCVFrameConverter
+import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfInt
@@ -66,14 +71,17 @@ private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm")
 private fun runProcessing(inputArgs: InputArgs) {
 
     val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
-    if (video) {
-        VideoProcessor.processVideo2(inputArgs)
-    } else {
-        val file = File(inputArgs.path)
-        val bufferedImage = ImageIO.read(file)
+    val camera = inputArgs.path == "camera"
+    when {
+        camera -> CameraEncoder.start(inputArgs)
+        video -> VideoProcessor.processVideo(inputArgs)
+        else -> {
+            val file = File(inputArgs.path)
+            val bufferedImage = ImageIO.read(file)
 
-        val asciiImage = Asciificator().processImage(bufferedImage, inputArgs)
-        writeImageCV(asciiImage, inputArgs.outPath)
+            val asciiImage = Asciificator().processImage(bufferedImage, inputArgs)
+            writeImageCV(asciiImage, inputArgs.outPath)
+        }
     }
 }
 
@@ -97,9 +105,23 @@ fun BufferedImage.toMat(type: Int): Mat {
     return mat.apply { put(0, 0, pixels) }
 }
 
+fun BufferedImage.toMatBytedeco(type: Int): opencv_core.Mat {
+    return ToMat().convertToMat(Java2DFrameConverter().convert(this))
+}
+
+//fun BufferedImage.toMatBytedeco(): ByteDecoMat {
+//
+//}
+
 private fun initOpenCV() {
     Loader.load(opencv_java::class.java)
+//    Loader.load(cudnn::class.java)
     // System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
+}
+
+object Converters {
+    val cvConverter = OpenCVFrameConverter.ToMat()
+    val frameConverter = Java2DFrameConverter()
 }
 
 

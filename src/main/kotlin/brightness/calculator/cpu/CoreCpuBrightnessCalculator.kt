@@ -126,14 +126,14 @@ class CoreCpuBrightnessCalculator(
     private fun getRgbData(yOffset: Int, size: CustomSize): Array<IntArray> {
         val colorArray = Array(size.height) { IntArray(size.width) }
 
-        for (y in 0 until size.height step 2) {
+        for (y in 0 until size.height step 1) {
             bufferedImage!!.getRGB(0, yOffset + y, size.width, 1, colorArray[y], 0, 0)
 
             // Трум-трум лайфхаки ради 10% общего перфоманса
             // Считываем только каждую вторую горизонтальную строку
-            if (y < size.height) {
-                colorArray[y + 1] = colorArray[y]
-            }
+//            if (y < size.height) {
+//                colorArray[y + 1] = colorArray[y]
+//            }
         }
 
         return colorArray

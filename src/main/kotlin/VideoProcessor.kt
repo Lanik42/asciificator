@@ -1,31 +1,30 @@
 import brightness.calculator.cpu.CoreCpuBrightnessCalculator
+import org.bytedeco.javacpp.opencv_core
+import org.bytedeco.javacpp.opencv_videoio
+import org.bytedeco.javacv.Java2DFrameConverter
+import org.bytedeco.javacv.OpenCVFrameConverter
 import org.opencv.core.CvType
-import org.opencv.core.Mat
-import org.opencv.core.MatOfByte
-import org.opencv.core.Point
-import org.opencv.core.Size
-import org.opencv.imgcodecs.Imgcodecs
-import org.opencv.videoio.VideoCapture
-import org.opencv.videoio.VideoWriter
 import org.opencv.videoio.Videoio
 import workdistribution.core.ThreadManager
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.Collections
 import java.util.concurrent.Future
-import javax.imageio.ImageIO
 
 object VideoProcessor {
+
+    var FRAME_SIZE: opencv_core.Size = opencv_core.Size(-1, -1)
+    var CV_TYPE: Int = -1
 
     // Подобрано эмпирически
     private var BLOCK_SIZE = 20
 
-    // Нужны ли аскификаторы по количеству потоков? - сейчас кол-во потоков обрабатывает реализация в GpuColorCalculator
     private val asciificator = Asciificator()
 
-    fun processVideo2(inputArgs: InputArgs) {
-        opencvV1(inputArgs)
+    fun processVideo(inputArgs: InputArgs) {
+        printDebug(inputArgs)
+
+        opencv(inputArgs)
 
         Runtime.getRuntime().exec(
             "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
@@ -69,21 +68,12 @@ object VideoProcessor {
         //  File(getOutputVideoName(inputArgs)).delete()
     }
 
-    private fun opencvV1(inputArgs: InputArgs) {
-        println(
-            "ffmpeg -i \"${getOutputVideoName(inputArgs, " ff")}\" " +
-                    "-maxrate 12M " +
-                    "-minrate 2M " +
-                    "-bufsize 6M " +
-                    "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
-                    "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
-        )
-        val preVideoCapture = VideoCapture(inputArgs.path)
+    private fun opencv(inputArgs: InputArgs) {
+        val preVideoCapture = opencv_videoio.VideoCapture(inputArgs.path)
         val frameCount = preVideoCapture.get(Videoio.CAP_PROP_FRAME_COUNT)
         val fps = preVideoCapture.get(Videoio.CAP_PROP_FPS)
-        val depth = preVideoCapture.get(Videoio.CAP_PROP_XI_IMAGE_DATA_BIT_DEPTH)
-        val frameSize = getAsciiFrameSize(inputArgs, preVideoCapture)
-        val cvType = if (inputArgs.colored) {
+        FRAME_SIZE = getAsciiFrameSize(inputArgs, preVideoCapture)
+        CV_TYPE = if (inputArgs.colored) {
             CvType.CV_8UC3
         } else {
             CvType.CV_8UC1
@@ -91,27 +81,27 @@ object VideoProcessor {
         preVideoCapture.release()
 
         val videoCaptureArray = Collections.synchronizedList(
-            Array(ThreadManager.threadCount) { VideoCapture(inputArgs.path) }.toList()
+            Array(ThreadManager.threadCount) { opencv_videoio.VideoCapture(inputArgs.path) }.toList()
         )
 
         val mat2DArray = Collections.synchronizedList(
             Array(ThreadManager.threadCount) {
                 Array(BLOCK_SIZE) {
-                    Mat(frameSize, cvType)
+                    opencv_core.Mat(FRAME_SIZE, CV_TYPE)
                 }
             }.toList()
         )
 
         measureTimeMillis("opencv") {
-            val videoWriter = getVideoWriter(inputArgs, fps, frameSize, inputArgs.colored)
+            val videoWriter = getVideoWriter(inputArgs, fps, FRAME_SIZE, inputArgs.colored)
             // 0 - 11, 12 - 23, ...
             for (frameBlockOffset in 0 until frameCount.toInt() step ThreadManager.threadCount * BLOCK_SIZE) {
-                val futureMats = mutableListOf<Future<Array<Mat>>>()
+                val futureMats = mutableListOf<Future<Array<opencv_core.Mat>>>()
                 println("Progress $frameBlockOffset / $frameCount")
 
                 measureTimeMillis("time") {
                     repeat(ThreadManager.threadCount) { threadIndex ->
-                        ThreadManager.executors.submit<Array<Mat>> {
+                        ThreadManager.executors.submit<Array<opencv_core.Mat>> {
                             val frameOffset = frameBlockOffset + threadIndex * BLOCK_SIZE
                             if (frameOffset + BLOCK_SIZE >= frameCount) {
                                 synchronized(mat2DArray) {
@@ -124,14 +114,16 @@ object VideoProcessor {
                             val videoCapture = videoCaptureArray[threadIndex]
                             val frames = mat2DArray[threadIndex]
                             getFrames(frameOffset, videoCapture, frames)
-                            getAsciiFrames(frames, inputArgs, cvType)
+                            getAsciiFrames(frames, inputArgs)
                         }.also {
                             futureMats.add(threadIndex, it)
                         }
                     }
 
                     futureMats.forEach {
-                        it.get().forEach(videoWriter::write)
+                        it.get().forEach { mat ->
+                            videoWriter.write(mat)
+                        }
                     }
                 }
             }
@@ -143,23 +135,26 @@ object VideoProcessor {
         }
     }
 
-    private fun getFrames(frameOffset: Int, videoCapture: VideoCapture, frameArray: Array<Mat>) {
+    private fun getFrames(
+        frameOffset: Int,
+        videoCapture: opencv_videoio.VideoCapture,
+        frameArray: Array<opencv_core.Mat>
+    ) {
         videoCapture.set(Videoio.CAP_PROP_POS_FRAMES, frameOffset.toDouble())
         frameArray.forEach(videoCapture::read)
     }
 
     private fun getAsciiFrames(
-        frameArray: Array<Mat>,
+        frameArray: Array<opencv_core.Mat>,
         inputArgs: InputArgs,
-        cvType: Int
-    ): Array<Mat> {
+    ): Array<opencv_core.Mat> {
         val bench = CoreCpuBrightnessCalculator.Bench()
         measureTimeMillis("${frameArray.size} frames process") {
             frameArray.forEachIndexed { index, frame ->
                 try {
                     frameArray[index] =
                         asciificator.processImage(frame.toBufferedImage(), inputArgs, bench)
-                            .toMat(cvType)
+                            .toMatBytedeco(CV_TYPE)
                 } catch (e: Throwable) {
                     println(e.message)
                     if (e.message?.contains("unknown exception") == true) {
@@ -183,12 +178,17 @@ object VideoProcessor {
     private fun getVideoWriter(
         inputArgs: InputArgs,
         fps: Double,
-        frameSize: Size,
+        frameSize: opencv_core.Size,
         colored: Boolean
-    ): VideoWriter =
-        VideoWriter(
+    ): opencv_videoio.VideoWriter =
+        opencv_videoio.VideoWriter(
             getOutputVideoName(inputArgs),
-            VideoWriter.fourcc('H', '2', '6', '4'),
+            opencv_videoio.VideoWriter.fourcc(
+                'H'.code.toByte(),
+                '2'.code.toByte(),
+                '6'.code.toByte(),
+                '4'.code.toByte()
+            ),
             fps,
             frameSize,
             colored,
@@ -202,17 +202,41 @@ object VideoProcessor {
         return "$outputDir\\${fileName}_output$info$additionalString.mp4"
     }
 
-    private fun getAsciiFrameSize(inputArgs: InputArgs, videoCapture: VideoCapture): Size {
-        val frame = Mat()
+    private fun getAsciiFrameSize(
+        inputArgs: InputArgs,
+        videoCapture: opencv_videoio.VideoCapture
+    ): opencv_core.Size {
+        val frame = opencv_core.Mat()
         videoCapture.read(frame)
         val asciiImage = Asciificator().processImage(frame.toBufferedImage(), inputArgs)
 
-        return Size(Point(asciiImage.width.toDouble(), asciiImage.height.toDouble()))
+        return opencv_core.Size(opencv_core.Point(asciiImage.width, asciiImage.height))
     }
 
-    private fun Mat.toBufferedImage(): BufferedImage {
-        val outputMat = MatOfByte()
-        Imgcodecs.imencode(".jpg", this, outputMat)
-        return ImageIO.read(ByteArrayInputStream(outputMat.toArray()))
+    private fun opencv_core.Mat.toBufferedImage(): BufferedImage {
+        return Java2DFrameConverter().convert(OpenCVFrameConverter.ToMat().convert(this))
+    }
+
+//    private fun Mat.toBufferedImage(): BufferedImage {
+//        val outputMat = MatOfByte()
+//        Imgcodecs.imencode(".jpg", this, outputMat)
+//        return ImageIO.read(ByteArrayInputStream(outputMat.toArray()))
+//    }
+
+    private fun printDebug(inputArgs: InputArgs) {
+        println(
+            "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
+                    "-i \"${inputArgs.path}\" " +
+                    "-c:v copy -map 0:v:0 -map 1:a:0 " +
+                    "\"${getOutputVideoName(inputArgs, " ff")}\""
+        )
+        println(
+            "ffmpeg -i \"${getOutputVideoName(inputArgs, " ff")}\" " +
+                    "-maxrate 12M " +
+                    "-minrate 2M " +
+                    "-bufsize 6M " +
+                    "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
+                    "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
+        )
     }
 }
