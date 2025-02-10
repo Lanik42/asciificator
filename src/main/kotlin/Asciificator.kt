@@ -4,19 +4,6 @@ import paint.cpu.CpuTextPainter
 import java.awt.Font
 import java.awt.image.BufferedImage
 
-
-enum class WorkDistributionType {
-    BY_AREA,
-    BY_COLUMN
-}
-
-//data class Color(
-//    val r: Int,
-//    val g: Int,
-//    val b: Int,
-//    val brightness: Float
-//)
-
 class Asciificator {
 
     companion object Bench {
@@ -40,7 +27,7 @@ class Asciificator {
             BrightnessConverter(inputArgs.colored).convertToSymbols(color2DList)
         }.first
 
-        val font = Font(Font.MONOSPACED, Font.PLAIN, inputArgs.fontSize)  // меньше 11 шрифта все шакалится
+        val font = Font(Font.MONOSPACED, Font.PLAIN, inputArgs.fontSize)  // меньше 10 шрифта все шакалится
 
         val a = measureTimeNanos("paint") {
             CpuTextPainter(font, inputArgs.symbolToPixelAreaRatio)

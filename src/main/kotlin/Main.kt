@@ -1,20 +1,16 @@
-import camera.CameraEncoder
+import camera.CameraProcessor
 import org.bytedeco.javacpp.Loader
-import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_java
-import org.bytedeco.javacv.Java2DFrameConverter
-import org.bytedeco.javacv.OpenCVFrameConverter
-import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfInt
 import org.opencv.imgcodecs.Imgcodecs
+import video.VideoProcessor
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
-import kotlin.system.exitProcess
 
 const val ABSOLUTE_FILE_PATH = "-path"
 const val COLORED = "-colored"
@@ -48,12 +44,7 @@ const val SCALE_SYMBOLS_FIT = "-scale"
 // n (кол-во потоков) кадров одновременно, нет смысла для каждого кадра еще разделять работу на 12 потоков, в теории ухудшает производительность
 
 
-// 9. PRIORITY!! Супер крутая тема - сделать realtime видео с камеры в ASCII
-
-
-// ВАЖНО ПРИ ИСПОЛЬЗОВАНИИ! В идеале ratio нужно подбирать такой, чтобы высота и ширина видоса делились на это число. В таком случае соотношение сторон будет соответствовать
-// исходнику. Актуально до фикса пункта 7 с реализацией подгона под соотношение сторон.
-// ratio = 8 выглядит хорошо для стандартных разрешений
+// fontSize = 11 выглядит неплохо в большинстве случаев, но нужно тестить
 fun main(args: Array<String>) {
     initOpenCV()
 
@@ -62,8 +53,6 @@ fun main(args: Array<String>) {
     measureTimeMillis("overall") {
         runProcessing(inputArgs)
     }
-
-    exitProcess(0)
 }
 
 private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm")
@@ -73,8 +62,10 @@ private fun runProcessing(inputArgs: InputArgs) {
     val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
     val camera = inputArgs.path == "camera"
     when {
-        camera -> CameraEncoder.start(inputArgs)
+        camera -> CameraProcessor.start(inputArgs)
+
         video -> VideoProcessor.processVideo(inputArgs)
+
         else -> {
             val file = File(inputArgs.path)
             val bufferedImage = ImageIO.read(file)
@@ -105,10 +96,6 @@ fun BufferedImage.toMat(type: Int): Mat {
     return mat.apply { put(0, 0, pixels) }
 }
 
-fun BufferedImage.toMatBytedeco(type: Int): opencv_core.Mat {
-    return ToMat().convertToMat(Java2DFrameConverter().convert(this))
-}
-
 //fun BufferedImage.toMatBytedeco(): ByteDecoMat {
 //
 //}
@@ -118,12 +105,6 @@ private fun initOpenCV() {
 //    Loader.load(cudnn::class.java)
     // System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
 }
-
-object Converters {
-    val cvConverter = OpenCVFrameConverter.ToMat()
-    val frameConverter = Java2DFrameConverter()
-}
-
 
 //private fun benchmarkDifferentArgs(bufferedImage: BufferedImage) {
 //    val differentArgsList = listOf(

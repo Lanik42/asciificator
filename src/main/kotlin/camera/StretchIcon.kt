@@ -28,7 +28,7 @@ import javax.swing.ImageIcon
  * @version 1.0 03/27/12
  * @author Darryl
 </P> */
-class StretchIcon : ImageIcon {
+open class StretchIcon : ImageIcon {
     /**
      * Determines whether the aspect ratio of the image is maintained.
      * Set to `false` to allow th image to distort to fill the component.

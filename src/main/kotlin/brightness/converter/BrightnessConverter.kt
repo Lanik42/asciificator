@@ -1,6 +1,7 @@
 package brightness.converter
 
-import CustomColor
+import brightness.CustomColor
+
 
 class BrightnessConverter(
     private val colored: Boolean
@@ -21,7 +22,7 @@ class BrightnessConverter(
 
         // Не использовать @, тк этот символ имеет отличающуюся ширину от остальных, из-за этого невозможно сделать все строки одной
         // ширины =(
-        const val SYMBOLS_BY_BRIGHTNESS = "B%8&WM#*oahkbdpqcnxrjft-~i!lI;:,^.              "
+        const val SYMBOLS_BY_BRIGHTNESS = "B%8&WM#*oahkbdpqcnxrjft-~i!lI;:,^. "
         const val SYMBOLS_BY_BRIGHTNESS_COLORED = "@"
     }
 

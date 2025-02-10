@@ -1,6 +1,6 @@
 package paint.cpu
 
-import CustomColor
+import brightness.CustomColor
 import measureTimeNanos
 import java.awt.Font
 import java.awt.Graphics2D
@@ -14,28 +14,19 @@ class CpuTextPainter(
     private val symbolToPixelAreaRatio: Int,
 ) {
 
-    private companion object {
-
-        const val SYMBOLS_SPACING_CORRECTION = -1
-        const val LINE_HEIGHT_CORRECTION = -3
-    }
-
     fun drawImage(
         char2DArray: Array<CharArray>,
         color2DList: Array<Array<CustomColor>>,
         colored: Boolean,
         scaleSymbolsFit: Boolean
     ): BufferedImage {
-        var graphics: Graphics2D =
-            BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics().apply {
-                setupRender(font)
-            }
+        var graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics()
+        graphics.setupRender(font)
 
         val (charWidth, charHeight) = getCharSize(scaleSymbolsFit, graphics)
         val outputImage = getOutputImage(charWidth, charHeight, char2DArray.size - 1, char2DArray[0].size, colored)
         graphics.dispose()
 
-        // graphics2d for each thread
         graphics = outputImage.createGraphics()
         graphics.setupRender(font)
         graphics.fill(Rectangle(char2DArray[0].size * charWidth, char2DArray.size * charHeight))
@@ -55,20 +46,20 @@ class CpuTextPainter(
 
     private fun getCharSize(scaleSymbolsFit: Boolean, graphics2D: Graphics2D): Pair<Int, Int> =
         if (scaleSymbolsFit) {
-            graphics2D.fontMetrics.charWidth('B') + SYMBOLS_SPACING_CORRECTION to graphics2D.fontMetrics.ascent + LINE_HEIGHT_CORRECTION
+            graphics2D.fontMetrics.charWidth('B') to graphics2D.fontMetrics.ascent - graphics2D.fontMetrics.descent
         } else {
             symbolToPixelAreaRatio to symbolToPixelAreaRatio
         }
 
     private fun getOutputImage(
         charWidth: Int,
-        lineHeight: Int,
+        charHeight: Int,
         linesAmount: Int,
         charAmount: Int,
         colored: Boolean
     ): BufferedImage {
         val outputImageWidth = charWidth * charAmount
-        val outputImageHeight = lineHeight * linesAmount
+        val outputImageHeight = charHeight * linesAmount
 
         return if (colored) {
             BufferedImage(outputImageWidth, outputImageHeight, BufferedImage.TYPE_3BYTE_BGR)
@@ -94,7 +85,6 @@ class CpuTextPainter(
         charHeight: Int,
         charWidth: Int
     ) {
-
         char2DArray.forEachIndexed { yIndex, charArray ->
             charArray.forEachIndexed { xIndex, char ->
                 val color = color2DList[yIndex][xIndex]
@@ -106,12 +96,7 @@ class CpuTextPainter(
         }
     }
 
-    private fun draw(
-        graphics2D: Graphics2D,
-        char2DArray: Array<CharArray>,
-        charHeight: Int,
-        charWidth: Int
-    ) {
+    private fun draw(graphics2D: Graphics2D, char2DArray: Array<CharArray>, charHeight: Int, charWidth: Int) {
         graphics2D.color = AwtColor.BLACK
 
         char2DArray.forEachIndexed { yIndex, charArray ->
@@ -119,11 +104,5 @@ class CpuTextPainter(
                 graphics2D.drawString(char.toString(), xIndex * charWidth, charHeight * yIndex)
             }
         }
-
-        // Работало бы классно, если бы все символы monospace шрифта были бы равны charWidth (а они должны быть ему равны)
-        // Но в реальности что-то идет не так и символы не имеют charWidth ширину
-//        char2DArray.forEachIndexed { yIndex, charArray ->
-//            graphics2D.drawChars(charArray, 0, charArray.size, 0, charHeight * yIndex)
-//        }
     }
 }

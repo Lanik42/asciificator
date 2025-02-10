@@ -1,6 +1,6 @@
 package brightness.calculator
 
-import CustomColor
+import brightness.CustomColor
 import brightness.calculator.cpu.CoreCpuBrightnessCalculator
 import java.awt.image.BufferedImage
 
