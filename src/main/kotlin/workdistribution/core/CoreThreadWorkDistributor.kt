@@ -38,26 +38,4 @@ class CoreThreadWorkDistributor(
             )
         }
     }
-
-    /**
-     * Этот метод используется для обработки ситуации, когда высота картинки не ровно поделилась на заданный
-     * symbolToPixelAreaRatio, и нет возможности поделить всю работу между потоками равномерно
-     *
-     * Нижние зоны по y берут на себя невошедшие символы снизу
-     */
-
-
-    // TODO зарефачить это так, чтобы не последний тред съедал нижние пиксели, а выделялся еще один поток, который бы их обработал
-    private fun handleLastYArea(threadDataArray: Array<ThreadInputData?>, yIndex: Int) {
-        val threadHeightInSymbols = symbolsPerYDimension / ThreadManager.threadCount
-
-        val inputThreadData = ThreadInputData(
-            threadHeightInSymbols = threadHeightInSymbols,
-            symbolSizeInPixels = CustomSize(symbolToPixelAreaRatio, symbolToPixelAreaRatio),
-            lastRowExtraSymbols = extraBottomSymbols
-        )
-        threadDataArray[yIndex] = inputThreadData
-    }
-
-
 }

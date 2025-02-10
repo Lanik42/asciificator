@@ -1,7 +1,7 @@
 package brightness.calculator.cpu
 
-import CustomColor
 import CustomSize
+import brightness.CustomColor
 import brightness.calculator.BrightnessCalculator
 import measureTimeNanos
 import workdistribution.core.CoreThreadWorkDistributor
@@ -45,17 +45,6 @@ class CoreCpuBrightnessCalculator(
         bufferedImage = null
         return brightnessList
     }
-
-//    ThreadManager.executors.forEachIndexed { index, executor ->
-//        executor.submit<Array<Array<CustomColor>?>> {
-//            val threadOffsetInSymbols = if (index == 0) {
-//                0
-//            } else {
-//                threadDataArray[index - 1]!!.threadHeightInSymbols * index
-//            }
-//
-//            getBrightnessByThread(threadDataArray[index], threadOffsetInSymbols)
-//        }.also { futureArray[index] = it }
 
     // 1st version = 800ms. 2nd - 650? (get pixels by area + remove flatMap to calculate averageBrightness) . 3rd - 450ms
     // TODO!!! Сейчас массив, который возвращает getBrighntessOuter, возвращает Array цветов для всей области из потока (1/12 картинки), либо придумать что делать здесь
@@ -126,22 +115,21 @@ class CoreCpuBrightnessCalculator(
     private fun getRgbData(yOffset: Int, size: CustomSize): Array<IntArray> {
         val colorArray = Array(size.height) { IntArray(size.width) }
 
-        for (y in 0 until size.height step 1) {
+        for (y in 0 until size.height step 2) {
             bufferedImage!!.getRGB(0, yOffset + y, size.width, 1, colorArray[y], 0, 0)
 
             // Трум-трум лайфхаки ради 10% общего перфоманса
             // Считываем только каждую вторую горизонтальную строку
-//            if (y < size.height) {
-//                colorArray[y + 1] = colorArray[y]
-//            }
+            if (y < size.height && y + 1 < colorArray.size) {
+                colorArray[y + 1] = colorArray[y]
+            }
         }
 
         return colorArray
     }
 
     private fun Array<IntArray>.averageBrightnessBySize(threadData: ThreadInputData): Array<Array<CustomColor>?> {
-        val threadHeightInSymbols =
-            threadData.threadHeightInSymbols + threadData.lastRowExtraSymbols
+        val threadHeightInSymbols = threadData.threadHeightInSymbols + threadData.lastRowExtraSymbols
         val colorArray = Array<Array<CustomColor>?>(threadHeightInSymbols) {
             Array(symbolsPerXDimension) { CustomColor(0, 0, 0, 0.0f) }
         }
@@ -149,8 +137,7 @@ class CoreCpuBrightnessCalculator(
         val symbolSize = threadData.symbolSizeInPixels
         repeat(threadData.threadHeightInSymbols) { y ->
             repeat(symbolsPerXDimension) { x ->
-                colorArray[y]!![x] =
-                    calculateBrightness(y * symbolSize.height, x * symbolSize.width, symbolSize)
+                colorArray[y]!![x] = calculateBrightness(y * symbolSize.height, x * symbolSize.width, symbolSize)
             }
         }
 
@@ -167,11 +154,7 @@ class CoreCpuBrightnessCalculator(
         return colorArray
     }
 
-    private fun Array<IntArray>.calculateBrightness(
-        yOffset: Int,
-        xOffset: Int,
-        symbolSize: CustomSize
-    ): CustomColor {
+    private fun Array<IntArray>.calculateBrightness(yOffset: Int, xOffset: Int, symbolSize: CustomSize): CustomColor {
         var red = 0
         var green = 0
         var blue = 0

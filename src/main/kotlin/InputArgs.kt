@@ -6,15 +6,15 @@ data class InputArgs(
     val outPath: String,
     val scale: Boolean,
 )
-// Добавить выходной формат (jpg / png), возможно цвет фона
-// Добавить строку, которая используется для grayScale
+// Добавить выходной формат (jpg / png)?
+// Добавить строку, которая используется для grayScale?
 
 fun Array<String>.parse(): InputArgs {
     val nameToValueMap = getArgNameToValueMap()
     return nameToValueMap.parseMapToInputArgs()
 }
 
-fun Array<String>.getArgNameToValueMap(): Map<String, String> {
+fun Array<String>.getArgNameToValueMap(): MutableMap<String, String> {
     val argNameToValueMap = mutableMapOf<String, String>()
 
     for (i in 0..lastIndex step 2) {
@@ -28,14 +28,13 @@ fun Array<String>.getArgNameToValueMap(): Map<String, String> {
     return argNameToValueMap
 }
 
-fun Map<String, String>.parseMapToInputArgs(): InputArgs {
+fun MutableMap<String, String>.parseMapToInputArgs(): InputArgs {
     val path = get(ABSOLUTE_FILE_PATH) ?: error("Path (-path) argument not specified!")
     val symbolToPixelAreaRatio = get(SYMBOL_TO_PIXEL_AREA_RATIO) ?: error("Ratio (-ratio) argument not specified!")
     val colored = get(COLORED) ?: error("Colored (-colored) argument not specified!")
     val outPath = get(OUT_PATH) ?: error("Out path (-output) argument not specified!")
     val fontSize = get(FONT_SIZE) ?: error("Font size (-fontSize) argument not specified!")
     val scale = get(SCALE_SYMBOLS_FIT) ?: error("Scale (-scale) argument not specified!")
-
 
     return InputArgs(
         path = path,

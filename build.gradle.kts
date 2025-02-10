@@ -17,10 +17,6 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    implementation("opencv:opencv:4.0.1-1")
-//    implementation("opencv:opencv:4.5.0-0")
-
     implementation("com.github.jbellis:jamm:0.4.0")
 
     implementation("org.bytedeco:javacv:1.4.4")
@@ -28,15 +24,6 @@ dependencies {
     implementation("org.bytedeco:javacv-platform:1.4.4")
 
     implementation("com.github.sarxos:webcam-capture:0.3.12")
-
-
-    //    implementation("org.bytedeco:javacv:1.5.8")
-//    implementation("org.bytedeco:ffmpeg-platform:5.1.2-1.5.8")
-//    implementation("org.bytedeco:javacv-platform:1.5.8")
-//
-//    implementation("org.bytedeco:opencv-platform-gpu:4.6.0-1.5.8")
-//    implementation("org.bytedeco:cuda:11.8-8.6-1.5.8")
-//    implementation("org.bytedeco:cuda-platform-redist:11.8-8.6-1.5.8")
 
     api("com.aparapi:aparapi:3.0.0")
     implementation(kotlin("stdlib-jdk8"))
@@ -64,3 +51,9 @@ compileTestKotlin.kotlinOptions {
 
 tasks.getByName<Zip>("distZip").enabled = false
 tasks.getByName<Tar>("distTar").enabled = false
+
+tasks.jar {
+    manifest {
+        attributes("Main-Class" to "MainKt")
+    }
+}
