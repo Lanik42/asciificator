@@ -1,15 +1,15 @@
 import camera.CameraProcessor
 import org.bytedeco.javacpp.Loader
+import org.bytedeco.javacpp.opencv_core
+import org.bytedeco.javacpp.opencv_imgcodecs.imwrite
 import org.bytedeco.javacpp.opencv_java
-import org.opencv.core.CvType
-import org.opencv.core.Mat
-import org.opencv.core.MatOfInt
-import org.opencv.imgcodecs.Imgcodecs
+import org.bytedeco.javacv.Java2DFrameConverter
+import org.bytedeco.javacv.OpenCVFrameConverter
 import video.VideoProcessor
 import java.awt.image.BufferedImage
-import java.awt.image.DataBufferByte
 import java.io.File
 import java.io.IOException
+import java.nio.IntBuffer
 import javax.imageio.ImageIO
 
 const val ABSOLUTE_FILE_PATH = "-path"
@@ -69,22 +69,19 @@ private fun runProcessing(inputArgs: InputArgs) {
 
 private fun writeImageCV(image: BufferedImage, path: String) {
     try {
-        val qualityParams = MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 60)
+        val qualityParams = opencv_core.Mat(org.bytedeco.javacpp.opencv_imgcodecs.IMWRITE_JPEG_QUALITY, 60).createBuffer<IntBuffer>()
         if (image.type == BufferedImage.TYPE_BYTE_GRAY) {
-            Imgcodecs.imwrite("$path.jpg", image.toMat(CvType.CV_8UC1), qualityParams)
+            imwrite("$path.jpg", image.toMatBytedeco(), qualityParams)
         } else {
-            Imgcodecs.imwrite("$path.jpg", image.toMat(CvType.CV_8UC3), qualityParams)
+            imwrite("$path.jpg", image.toMatBytedeco(), qualityParams)
         }
     } catch (ex: IOException) {
         ex.printStackTrace()
     }
 }
 
-fun BufferedImage.toMat(type: Int): Mat {
-    val mat = Mat(height, width, type)
-    val pixels = (raster.dataBuffer as DataBufferByte).data
-    return mat.apply { put(0, 0, pixels) }
-}
+fun BufferedImage.toMatBytedeco(): opencv_core.Mat =
+    OpenCVFrameConverter.ToMat().convertToMat(Java2DFrameConverter().convert(this))
 
 private fun initOpenCV() {
     Loader.load(opencv_java::class.java)
