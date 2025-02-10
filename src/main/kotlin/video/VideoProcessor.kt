@@ -8,8 +8,7 @@ import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_videoio
 import org.bytedeco.javacv.Java2DFrameConverter
 import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
-import org.opencv.core.CvType
-import org.opencv.videoio.Videoio
+import toMatBytedeco
 import workdistribution.core.ThreadManager
 import java.awt.image.BufferedImage
 import java.util.Collections
@@ -28,7 +27,7 @@ object VideoProcessor {
         opencv(inputArgs)
 
         Runtime.getRuntime().exec(
-            "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
+            "${getFFmpegPath()} -i \"${getOutputVideoName(inputArgs)}\" " +
                     "-i \"${inputArgs.path}\" " +
                     "-c:v copy -map 0:v:0 -map 1:a:0 " +
                     "\"${getOutputVideoName(inputArgs, " ff")}\""
@@ -37,7 +36,6 @@ object VideoProcessor {
         println("avg paint time: ${Asciificator.paintTime.toDouble() / 1000000 / Asciificator.frameCount}ms")
         Asciificator.paintTime = 0
         Asciificator.frameCount = 0
-
         // PRIORITY! научиться ждать окончания работы ффмпег (заиспользовать ffmpeg-cli wrapper?)
 
 //        val frameGrabber = FFmpegFrameGrabber(getOutputVideoName(inputArgs, " ff"))
@@ -65,14 +63,15 @@ object VideoProcessor {
     }
 
     private fun opencv(inputArgs: InputArgs) {
+
         val preVideoCapture = opencv_videoio.VideoCapture(inputArgs.path)
-        val frameCount = preVideoCapture.get(Videoio.CAP_PROP_FRAME_COUNT)
-        val fps = preVideoCapture.get(Videoio.CAP_PROP_FPS)
+        val frameCount = preVideoCapture.get(opencv_videoio.CAP_PROP_FRAME_COUNT)
+        val fps = preVideoCapture.get(opencv_videoio.CAP_PROP_FPS)
         val frameSize = getAsciiFrameSize(inputArgs, preVideoCapture)
         val cvType = if (inputArgs.colored) {
-            CvType.CV_8UC3
+            opencv_core.CV_8UC3
         } else {
-            CvType.CV_8UC1
+            opencv_core.CV_8UC1
         }
         preVideoCapture.release()
 
@@ -130,7 +129,7 @@ object VideoProcessor {
     }
 
     private fun getFrames(frameOffset: Int, videoCapture: opencv_videoio.VideoCapture, frameArray: Array<opencv_core.Mat>) {
-        videoCapture.set(Videoio.CAP_PROP_POS_FRAMES, frameOffset.toDouble())
+        videoCapture.set(opencv_videoio.CAP_PROP_POS_FRAMES, frameOffset.toDouble())
         frameArray.forEach(videoCapture::read)
     }
 
@@ -182,11 +181,12 @@ object VideoProcessor {
         return opencv_core.Size(opencv_core.Point(asciiImage.width, asciiImage.height))
     }
 
+    private fun getFFmpegPath(): String =
+        Asciificator::class.java.getProtectionDomain().codeSource.location.toURI().getPath()
+            .substringBeforeLast("/classes") + "/resources/main/ffmpeg.exe"
+
     private fun opencv_core.Mat.toBufferedImage(): BufferedImage =
         Java2DFrameConverter().convert(ToMat().convert(this))
-
-    private fun BufferedImage.toMatBytedeco(): opencv_core.Mat =
-        ToMat().convertToMat(Java2DFrameConverter().convert(this))
 
     private fun printDebug(inputArgs: InputArgs) {
         println(
