@@ -17,15 +17,12 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.jbellis:jamm:0.4.0")
-
     implementation("org.bytedeco:javacv:1.4.4")
     implementation("org.bytedeco.javacpp-presets:ffmpeg:4.1-1.4.4")
     implementation("org.bytedeco:javacv-platform:1.4.4")
 
     implementation("com.github.sarxos:webcam-capture:0.3.12")
 
-    api("com.aparapi:aparapi:3.0.0")
     implementation(kotlin("stdlib-jdk8"))
 }
 
