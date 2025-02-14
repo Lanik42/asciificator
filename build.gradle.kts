@@ -41,10 +41,6 @@ val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
     jvmTarget = "1.8"
 }
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = "1.8"
-}
 
 tasks.getByName<Zip>("distZip").enabled = false
 tasks.getByName<Tar>("distTar").enabled = false

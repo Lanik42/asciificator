@@ -39,7 +39,8 @@ const val SCALE_SYMBOLS_FIT = "-scale"
 // 6. научиться создавать виртуальную камеру, я слышал есть драйвер для этого direct show вроде
 // 7. прикрутить функционал подгрузки видоса из ютуба
 // 8. yt-dlp утилита
-
+// 9. Для обработки видео нужно по-другому распределять работу, каждый поток должен обрабатывать один кадр. Сейчас для каждого кадра создается 16 тредов, и работа
+// по обработке кадра делится между ними.
 
 /**
  * -path C:\Users\samos\Downloads\skeletonsmile.mp4 -output C:\Users\samos\Downloads\shakaikouken.mp4 -ratio 11 -colored true -fontSize 11 -scale true
