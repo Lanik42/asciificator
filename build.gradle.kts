@@ -3,7 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	kotlin("jvm") version "1.8.0"
+	kotlin("jvm")
 	id("org.jetbrains.compose")
 }
 
@@ -41,12 +41,12 @@ tasks.test {
 }
 
 kotlin {
-	jvmToolchain(8)
+	jvmToolchain(11)
 }
 
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
-	jvmTarget = "1.8"
+	jvmTarget = "11"
 }
 
 tasks.jar {
