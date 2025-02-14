@@ -1,8 +1,10 @@
+import org.gradle.kotlin.dsl.support.zipTo
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.8.0"
-    application
+    id("org.jetbrains.compose")
 }
 
 group = "org.example"
@@ -11,9 +13,8 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
     google()
-    maven {
-        url = uri("https://repository.hellonico.info/repository/hellonico/")
-    }
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://repository.hellonico.info/repository/hellonico/")
 }
 
 dependencies {
@@ -24,6 +25,14 @@ dependencies {
     implementation("com.github.sarxos:webcam-capture:0.3.12")
 
     implementation(kotlin("stdlib-jdk8"))
+
+
+    //compose
+    implementation(compose.desktop.currentOs)
+
+    //koin
+    implementation("io.insert-koin:koin-core:3.1.5")
+    implementation("io.insert-koin:koin-test:3.1.5")
 }
 
 tasks.test {
@@ -34,19 +43,39 @@ kotlin {
     jvmToolchain(8)
 }
 
-application {
-    mainClass.set("MainKt")
-}
 val compileKotlin: KotlinCompile by tasks
 compileKotlin.kotlinOptions {
     jvmTarget = "1.8"
 }
 
-tasks.getByName<Zip>("distZip").enabled = false
-tasks.getByName<Tar>("distTar").enabled = false
-
 tasks.jar {
     manifest {
         attributes("Main-Class" to "MainKt")
+    }
+}
+
+//tasks.getByName<Zip>("distZip").enabled = false
+//tasks.getByName<Tar>("distTar").enabled = false
+
+// Чтобы сделать exe ./gradlew :createDistributable
+// файл будет в $rootDir\build\compose\binaries\main\app
+
+compose.desktop {
+    application {
+        mainClass = "MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "necoscii"
+            packageVersion = "1.0.0"
+            windows {
+                // a version for all Windows distributables
+                packageVersion = "1.0.0"
+                // a version only for the msi package
+                msiPackageVersion = "1.0.0"
+                // a version only for the exe package
+                exePackageVersion = "1.0.0"
+            }
+        }
     }
 }
