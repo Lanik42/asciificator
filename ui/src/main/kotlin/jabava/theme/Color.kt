@@ -2,16 +2,16 @@ package jabava.theme
 
 import androidx.compose.ui.graphics.Color
 
-//TODO добавить ебучии цвета
-val Primary = Color(0xFF32312D)
-val Secondary = Color(0xFF9E989C)
-//val Tertiary = Color(0XFF8E6E6E)
-val Error = Color(0XFF8E6E6E)
-val Background = Color(0XFFFFF7EC)
-val Overlay = Color(0X55C0A37B)
+val Main = Color(0xFF26252C)
+val Secondary = Color(0xFFFAB4D0)
+val SideMain = Color(0xFF2E2D34)
+val SelectedSideMain = Color(0xFF35343D)
 
-//val PrimaryDark = Color(0xFFE6EBEF)
-//val SecondaryDark = Color(0xFF6E808E)
-//val TertiaryDark = Color(0XFF8E6E6E)
-//val ErrorDark = Color(0XFF8E6E6E)
-//val BackgroundDark = Color(0XFF8E6E6E)
+val TextMain = Color(0xFFFFFFFF)
+val TextSmall = Color(0xFFC0C1C8)
+val SideText = Color(0xFF7C7A87)
+
+val Close = Color(0XFFFE6057)
+val Expand = Color(0XFFFDBD2E)
+val RollUp = Color(0XFF27C740)
+

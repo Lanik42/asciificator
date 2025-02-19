@@ -6,9 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.application
-import jabava.ui.AppState
-import jabava.ui.AppWindow
-import jabava.ui.Tray
+import jabava.window.ui.AppState
+import jabava.window.ui.AppWindow
+import jabava.window.ui.Tray
 
 fun main() {
 	val appInstanceController = AppInstanceController()
@@ -27,7 +27,7 @@ fun startApp(appInstanceController: AppInstanceController) {
 		val appState = remember { mutableStateOf<AppState>(AppState.Open) }
 
 		if (appState.value == AppState.Open)
-			AppWindow(appState)
+			AppWindow(appState, ::exitApplication)
 		else
 			Tray(appState)
 

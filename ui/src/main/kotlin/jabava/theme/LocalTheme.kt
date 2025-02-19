@@ -6,11 +6,8 @@ import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 
 private val LightColorPalette = lightColors(
-	primary = Primary,
+	primary = Main,
 	secondary = Secondary,
-	error = Error,
-	background = Background,
-	surface = Overlay
 )
 
 @Composable

@@ -1,4 +1,4 @@
-package jabava.ui
+package jabava.window.ui
 
 sealed interface AppState {
 
