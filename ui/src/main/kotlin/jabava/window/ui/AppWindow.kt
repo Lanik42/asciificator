@@ -1,6 +1,7 @@
 package jabava.window.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,18 +17,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
@@ -38,10 +30,6 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.rememberWindowState
 import jabava.theme.AsciiTheme
-import jabava.theme.Close
-import jabava.theme.Expand
-import jabava.theme.RollUp
-import jabava.theme.TextMain
 
 const val APP_NAME = "asciffy-doki"
 
@@ -65,11 +53,12 @@ fun AppWindow(
 			Column(
 				modifier = Modifier
 					.fillMaxSize()
-					.background(color = MaterialTheme.colors.primary)
+					.background(color = MaterialTheme.colors.secondary)
+					.border(width = 2.dp, color = MaterialTheme.colors.primary)
 			) {
 				AppTapBar(
 					onRollUp = {
-
+						windowState.isMinimized = true
 					},
 					onExpandClick = {
 						// тут надо добавить анимации разворачивания
@@ -112,10 +101,11 @@ fun WindowScope.AppTapBar(
 	onCloseClick: () -> Unit,
 ) {
 	WindowDraggableArea(
-		modifier = Modifier.height(20.dp)
+		modifier = Modifier.height(32.dp)
 	) {
 		TopAppBar(
-			backgroundColor = MaterialTheme.colors.primary, // Поменять цвет
+			backgroundColor = MaterialTheme.colors.secondary,
+			elevation = 0.dp,
 			modifier = Modifier
 		) {
 			Row(
@@ -123,20 +113,20 @@ fun WindowScope.AppTapBar(
 				horizontalArrangement = Arrangement.End,
 			) {
 				TopBarActionButton(
-					icon = painterResource("topbar/top_bar_roll_up_icon.svg"), backgroundColor = RollUp,
-					modifier = Modifier.padding(end = 5.dp),
+					icon = painterResource("topbar/top_bar_minimize_icon.svg"),
+					modifier = Modifier.padding(end = 2.dp),
 					onButtonClick = onRollUp
 				)
 
 				TopBarActionButton(
-					icon = painterResource("topbar/top_bar_extend_icon.svg"), backgroundColor = Expand,
-					modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+					icon = painterResource("topbar/top_bar_restore_icon.svg"),
+					modifier = Modifier.padding(start = 1.dp, end = 1.dp),
 					onButtonClick = onExpandClick
 				)
 
 				TopBarActionButton(
-					icon = painterResource("topbar/top_bar_close_icon.svg"), backgroundColor = Close,
-					modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+					icon = painterResource("topbar/top_bar_close_icon.svg"),
+					modifier = Modifier.padding(start = 1.dp, end = 2.dp),
 					onButtonClick = onCloseClick
 				)
 			}
@@ -144,29 +134,19 @@ fun WindowScope.AppTapBar(
 	}
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TopBarActionButton(
 	icon: Painter,
-	backgroundColor: Color,
 	modifier: Modifier,
 	onButtonClick: () -> Unit
 ) {
-	var buttonActive by remember { mutableStateOf(false) }
 
 	Icon(
 		modifier = modifier
-			.size(12.dp)
-			.drawBehind { drawCircle(color = backgroundColor, radius = 7.5f) }
-			.clickable { onButtonClick() }
-			.onPointerEvent(PointerEventType.Enter) { buttonActive = true }
-			.onPointerEvent(PointerEventType.Exit) { buttonActive = false },
-		painter = if (buttonActive) {
-			icon
-		} else {
-			painterResource("topbar/top_bar_empty_icon.svg")
-		},
-		tint = TextMain, // Заменить цвет
+			.size(22.dp)
+			.clickable { onButtonClick() },
+		painter = icon,
+		tint = MaterialTheme.colors.primary,
 		contentDescription = null,
 	)
 }

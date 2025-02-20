@@ -11,7 +11,7 @@ val TextMain = Color(0xFFFFFFFF)
 val TextSmall = Color(0xFFC0C1C8)
 val SideText = Color(0xFF7C7A87)
 
-val Close = Color(0XFFFE6057)
-val Expand = Color(0XFFFDBD2E)
-val RollUp = Color(0XFF27C740)
+//val Close = Color(0XFFFE6057)
+//val Restore = Color(0XFFFDBD2E)
+//val Minimize = Color(0XFF27C740)
 
