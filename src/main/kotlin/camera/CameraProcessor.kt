@@ -8,12 +8,11 @@ import java.awt.Dimension
 import javax.swing.JFrame
 import javax.swing.JLabel
 
-
-object CameraProcessor {
+class CameraProcessor(inputArgs: InputArgs) {
 
     private var videoCaptureInProgress = false
 
-    private val asciificator = Asciificator()
+    private val asciificator = Asciificator(inputArgs, WorkType.REALTIME)
     private val frame: JFrame = JFrame()
     private val label: JLabel = JLabel()
 
@@ -38,7 +37,7 @@ object CameraProcessor {
             while (videoCaptureInProgress) {
                 val start = System.currentTimeMillis()
 
-                label.icon = StretchIcon(asciificator.processImage(webcam.image, inputArgs))
+                label.icon = StretchIcon(asciificator.processImage(webcam.image))
 
                 if (firstFrame) {
                     frame.pack()

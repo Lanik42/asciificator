@@ -2,7 +2,7 @@ package workdistribution.core
 
 import CustomSize
 
-class CoreThreadWorkDistributor(
+class ThreadWorkDistributor(
     private val symbolToPixelAreaRatio: Int,
     imageSize: CustomSize
 ) {

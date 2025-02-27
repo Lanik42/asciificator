@@ -11,6 +11,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.IntBuffer
 import javax.imageio.ImageIO
+import kotlin.system.exitProcess
 
 const val ABSOLUTE_FILE_PATH = "-path"
 const val COLORED = "-colored"
@@ -50,28 +51,32 @@ fun main(args: Array<String>) {
 
     val inputArgs = args.parse()
 
-    measureTimeMillis("overall") {
-        runProcessing(inputArgs)
-    }
+    runProcessing(inputArgs)
 }
 
-private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm")
+private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm", "mkv")
 
 private fun runProcessing(inputArgs: InputArgs) {
 
     val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
     val camera = inputArgs.path == "camera"
     when {
-        camera -> CameraProcessor.start(inputArgs)
+        camera -> CameraProcessor(inputArgs).start(inputArgs)
 
-        video -> VideoProcessor.processVideo(inputArgs)
+        video -> {
+            measureTimeMillis("overall") {
+                VideoProcessor(inputArgs).processVideo()
+            }
+            exitProcess(0)
+        }
 
         else -> {
             val file = File(inputArgs.path)
             val bufferedImage = ImageIO.read(file)
 
-            val asciiImage = Asciificator().processImage(bufferedImage, inputArgs)
+            val asciiImage = Asciificator(inputArgs, WorkType.REALTIME).processImage(bufferedImage)
             writeImageCV(asciiImage, inputArgs.outPath)
+            exitProcess(0)
         }
     }
 }
