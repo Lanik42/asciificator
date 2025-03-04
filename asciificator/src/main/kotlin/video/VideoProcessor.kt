@@ -2,13 +2,14 @@ package video
 
 import Asciificator
 import InputArgs
+import WorkType
 import brightness.calculator.CalculatorBench
 import measureTimeMillis
 import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_videoio
 import org.bytedeco.javacv.Java2DFrameConverter
+import org.bytedeco.javacv.OpenCVFrameConverter
 import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
-import toMatBytedeco
 import workdistribution.core.ThreadManager
 import java.awt.image.BufferedImage
 import java.util.Collections
@@ -27,7 +28,7 @@ class VideoProcessor(private val inputArgs: InputArgs) {
     fun processVideo() {
         printDebug()
 
-       opencv()
+        convertVideo()
 
         Runtime.getRuntime().exec(
             "${getFFmpegPath()} -i \"${getOutputVideoName(inputArgs)}\" " +
@@ -36,9 +37,6 @@ class VideoProcessor(private val inputArgs: InputArgs) {
                     "\"${getOutputVideoName(inputArgs, " ff")}\""
         )
 
-        println("avg paint time: ${Asciificator.paintTime.toDouble() / 1000000 / Asciificator.frameCount}ms")
-        Asciificator.paintTime = 0
-        Asciificator.frameCount = 0
         // PRIORITY! научиться ждать окончания работы ффмпег (заиспользовать ffmpeg-cli wrapper?)
 
 //        val frameGrabber = FFmpegFrameGrabber(getOutputVideoName(inputArgs, " ff"))
@@ -65,7 +63,7 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         //  File(getOutputVideoName(inputArgs)).delete()
     }
 
-    private fun opencv() {
+    private fun convertVideo() {
         val preVideoCapture = opencv_videoio.VideoCapture(inputArgs.path)
         val frameCount = preVideoCapture.get(opencv_videoio.CAP_PROP_FRAME_COUNT)
         val fps = preVideoCapture.get(opencv_videoio.CAP_PROP_FPS)
@@ -103,7 +101,7 @@ class VideoProcessor(private val inputArgs: InputArgs) {
                             if (frameOffset + BLOCK_SIZE >= frameCount) {
                                 synchronized(mat2DArray) {
                                     mat2DArray[threadIndex] = mat2DArray[threadIndex]
-                                        .dropLast(frameOffset + BLOCK_SIZE % frameCount.toInt())
+                                        .dropLast((frameOffset + BLOCK_SIZE) % frameCount.toInt())
                                         .toTypedArray()
                                 }
                             }
@@ -140,9 +138,8 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         measureTimeMillis("${frameArray.size} frames process") {
             frameArray.forEachIndexed { index, frame ->
                 try {
-                    frameArray[index] =
-                        asciificator.processImage(frame.toBufferedImage(), bench)
-                            .toMatBytedeco()
+                    frameArray[index] = asciificator.processImage(frame.toBufferedImage(), bench)
+                        .toMatBytedeco()
                 } catch (e: Throwable) {
                     println(e.message)
                     // Починить багос, который возникает на последних кадрах, когда мы чуть переезжаем за
@@ -157,7 +154,12 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         return frameArray
     }
 
-    private fun getVideoWriter(inputArgs: InputArgs, fps: Double, frameSize: opencv_core.Size, colored: Boolean): opencv_videoio.VideoWriter =
+    private fun getVideoWriter(
+        inputArgs: InputArgs,
+        fps: Double,
+        frameSize: opencv_core.Size,
+        colored: Boolean
+    ): opencv_videoio.VideoWriter =
         opencv_videoio.VideoWriter(
             getOutputVideoName(inputArgs),
             opencv_videoio.VideoWriter.fourcc('H'.code.toByte(), '2'.code.toByte(), '6'.code.toByte(), '4'.code.toByte()),
@@ -174,20 +176,9 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         return "$outputDir\\${fileName}_output$info$additionalString.mp4"
     }
 
-    private fun getAsciiFrameSize(inputArgs: InputArgs, videoCapture: opencv_videoio.VideoCapture): opencv_core.Size {
-        val frame = opencv_core.Mat()
-        videoCapture.read(frame)
-        val asciiImage = Asciificator(inputArgs, WorkType.REALTIME).processImage(frame.toBufferedImage())
-
-        return opencv_core.Size(opencv_core.Point(asciiImage.width, asciiImage.height))
-    }
-
     private fun getFFmpegPath(): String =
         Asciificator::class.java.getProtectionDomain().codeSource.location.toURI().getPath()
             .substringBeforeLast("/classes") + "/resources/main/ffmpeg.exe"
-
-    private fun opencv_core.Mat.toBufferedImage(): BufferedImage =
-        Java2DFrameConverter().convert(ToMat().convert(this))
 
     private fun printDebug() {
         println(
@@ -205,4 +196,18 @@ class VideoProcessor(private val inputArgs: InputArgs) {
                     "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
         )
     }
+}
+
+fun opencv_core.Mat.toBufferedImage(): BufferedImage =
+    Java2DFrameConverter().convert(ToMat().convert(this))
+
+fun BufferedImage.toMatBytedeco(): opencv_core.Mat =
+    ToMat().convertToMat(Java2DFrameConverter().convert(this))
+
+fun getAsciiFrameSize(inputArgs: InputArgs, videoCapture: opencv_videoio.VideoCapture): opencv_core.Size {
+    val frame = opencv_core.Mat()
+    videoCapture.read(frame)
+    val asciiImage = Asciificator(inputArgs, WorkType.REALTIME).processImage(frame.toBufferedImage())
+
+    return opencv_core.Size(opencv_core.Point(asciiImage.width, asciiImage.height))
 }

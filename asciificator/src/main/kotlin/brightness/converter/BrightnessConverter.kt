@@ -7,7 +7,7 @@ class BrightnessConverter(
     private val colored: Boolean
 ) {
 
-    private companion object {
+    companion object {
 
         // @%#*+=-:.
         // $@B%8&WM#*oahkbdpqwmZO0QLYXzcvuft/\|()1+~i!lI;:,"^`'.

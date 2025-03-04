@@ -3,9 +3,8 @@ import org.bytedeco.javacpp.Loader
 import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_imgcodecs.imwrite
 import org.bytedeco.javacpp.opencv_java
-import org.bytedeco.javacv.Java2DFrameConverter
-import org.bytedeco.javacv.OpenCVFrameConverter
 import video.VideoProcessor
+import video.toMatBytedeco
 import java.awt.image.BufferedImage
 import java.io.File
 import java.io.IOException
@@ -57,9 +56,9 @@ fun main(args: Array<String>) {
 private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm", "mkv")
 
 private fun runProcessing(inputArgs: InputArgs) {
-
     val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
     val camera = inputArgs.path == "src/cameramera"
+
     when {
         camera -> CameraProcessor(inputArgs).start(inputArgs)
 
@@ -93,9 +92,6 @@ private fun writeImageCV(image: BufferedImage, path: String) {
         ex.printStackTrace()
     }
 }
-
-fun BufferedImage.toMatBytedeco(): opencv_core.Mat =
-    OpenCVFrameConverter.ToMat().convertToMat(Java2DFrameConverter().convert(this))
 
 private fun initOpenCV() {
     Loader.load(opencv_java::class.java)

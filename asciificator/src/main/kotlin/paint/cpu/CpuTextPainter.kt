@@ -14,20 +14,32 @@ class CpuTextPainter(
     private val symbolToPixelAreaRatio: Int,
 ) {
 
+    private companion object {
+
+        var charWidth = 0
+        var charHeight = 0
+    }
+
     fun drawImage(
         char2DArray: Array<CharArray>,
         color2DList: Array<Array<CustomColor>>,
         colored: Boolean,
         scaleSymbolsFit: Boolean
     ): BufferedImage {
-        var graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics()
-        graphics.setupRender(font)
+        if (charWidth == 0 || charHeight == 0) {
+            val graphics: Graphics2D = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).createGraphics()
+            graphics.setupRender(font)
+            val (cW, cH) = getCharSize(scaleSymbolsFit, graphics)
+            charWidth = cW
+            charHeight = cH
+            graphics.dispose()
+        }
 
-        val (charWidth, charHeight) = getCharSize(scaleSymbolsFit, graphics)
+        // TODO не создавать каждый раз новую картинку, а единожды создать по одной на каждый поток, это уменьшит нагрузку на GC
         val outputImage = getOutputImage(charWidth, charHeight, char2DArray.size - 1, char2DArray[0].size, colored)
-        graphics.dispose()
 
-        graphics = outputImage.createGraphics()
+        val graphics = outputImage.createGraphics()
+
         graphics.setupRender(font)
         graphics.fill(Rectangle(char2DArray[0].size * charWidth, char2DArray.size * charHeight))
 

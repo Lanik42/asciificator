@@ -14,7 +14,7 @@ fun Array<String>.parse(): InputArgs {
     return nameToValueMap.parseMapToInputArgs()
 }
 
-fun Array<String>.getArgNameToValueMap(): MutableMap<String, String> {
+fun Array<String>.getArgNameToValueMap(): Map<String, String> {
     val argNameToValueMap = mutableMapOf<String, String>()
 
     for (i in 0..lastIndex step 2) {
@@ -28,7 +28,7 @@ fun Array<String>.getArgNameToValueMap(): MutableMap<String, String> {
     return argNameToValueMap
 }
 
-fun MutableMap<String, String>.parseMapToInputArgs(): InputArgs {
+fun Map<String, String>.parseMapToInputArgs(): InputArgs {
     val path = get(ABSOLUTE_FILE_PATH) ?: error("Path (-path) argument not specified!")
     val symbolToPixelAreaRatio = get(SYMBOL_TO_PIXEL_AREA_RATIO) ?: error("Ratio (-ratio) argument not specified!")
     val colored = get(COLORED) ?: error("Colored (-colored) argument not specified!")
