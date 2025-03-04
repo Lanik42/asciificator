@@ -59,7 +59,7 @@ private val VIDEO_EXTENSIONS = listOf("mp4", "avi", "webm", "mkv")
 private fun runProcessing(inputArgs: InputArgs) {
 
     val video = inputArgs.path.substringAfterLast(".") in VIDEO_EXTENSIONS
-    val camera = inputArgs.path == "camera"
+    val camera = inputArgs.path == "src/cameramera"
     when {
         camera -> CameraProcessor(inputArgs).start(inputArgs)
 

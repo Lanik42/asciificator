@@ -14,4 +14,4 @@ plugins {
 }
 
 rootProject.name = "asciificator"
-include("ui")
+include("ui", "asciificator")
