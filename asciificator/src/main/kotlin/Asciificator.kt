@@ -50,11 +50,9 @@ class Asciificator(private val inputArgs: InputArgs, private val workType: WorkT
         }.first
 
         // Если мы сможем принимать, работать и выплевывать opencv_core.Mat, то это сэкономит значительно времени на конвертациях (и возможно обработке тоже)
-        val a = measureTimeNanos("paint") {
+        return measureTimeNanos("paint") {
             CpuTextPainter(font, inputArgs.symbolToPixelAreaRatio)
                 .drawImage(char2DArray, color2DList, inputArgs.colored, inputArgs.scale)
-        }
-
-        return a.first
+        }.first
     }
 }
