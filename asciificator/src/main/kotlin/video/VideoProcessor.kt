@@ -153,7 +153,7 @@ class VideoProcessor(private val inputArgs: InputArgs) {
     }
 
     private fun getFFmpegPath(): String =
-        Asciificator::class.java.getProtectionDomain().codeSource.location.toURI().getPath()
+        Asciificator::class.java.protectionDomain.codeSource.location.toURI().path
             .substringBeforeLast("/classes") + "/resources/main/ffmpeg.exe"
 
     private fun reEncodeVideo() {
