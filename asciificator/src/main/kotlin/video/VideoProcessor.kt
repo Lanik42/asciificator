@@ -159,22 +159,24 @@ class VideoProcessor(private val inputArgs: InputArgs) {
     private fun reEncodeVideo() {
         val frameGrabber = FFmpegFrameGrabber(getOutputVideoName(inputArgs))
         frameGrabber.start()
+        var asciiVideoFileName = getOutputVideoName(inputArgs)
 
         // Вытащить из записанного файла битрейт, если он выше 12к - прогнать
         if (frameGrabber.videoBitrate > 12000000) {
+            asciiVideoFileName = getOutputVideoName(inputArgs, " bitrate")
             executeCommand(
                 "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
                         "-maxrate 12M " +
                         "-minrate 2M " +
                         "-bufsize 6M " +
                         "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
-                        "\"${getOutputVideoName(inputArgs, " bitrate")}\""
+                        "\"$asciiVideoFileName\""
             )
         }
         frameGrabber.stop()
 
         executeCommand(
-            "${getFFmpegPath()} -i \"${getOutputVideoName(inputArgs, " bitrate")}\" " +
+            "${getFFmpegPath()} -i \"$asciiVideoFileName\" " +
                     "-i \"${inputArgs.path}\" " +
                     "-c:v copy -map 0:v:0 -map 1:a:0 " +
                     "\"${getOutputVideoName(inputArgs, " audio+bitrate")}\""
@@ -190,6 +192,8 @@ class VideoProcessor(private val inputArgs: InputArgs) {
                 line = it.readLine()
             }
         }
+
+        process.destroy()
     }
 }
 
