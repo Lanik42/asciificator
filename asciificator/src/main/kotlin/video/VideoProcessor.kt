@@ -7,11 +7,12 @@ import brightness.calculator.CalculatorBench
 import measureTimeMillis
 import org.bytedeco.javacpp.opencv_core
 import org.bytedeco.javacpp.opencv_videoio
+import org.bytedeco.javacv.FFmpegFrameGrabber
 import org.bytedeco.javacv.Java2DFrameConverter
-import org.bytedeco.javacv.OpenCVFrameConverter
 import org.bytedeco.javacv.OpenCVFrameConverter.ToMat
 import workdistribution.core.ThreadManager
 import java.awt.image.BufferedImage
+import java.io.File
 import java.util.Collections
 import java.util.concurrent.Future
 
@@ -26,41 +27,15 @@ class VideoProcessor(private val inputArgs: InputArgs) {
     private val asciificator = Asciificator(inputArgs, WorkType.BATCH)
 
     fun processVideo() {
-        printDebug()
-
         convertVideo()
 
-        Runtime.getRuntime().exec(
-            "${getFFmpegPath()} -i \"${getOutputVideoName(inputArgs)}\" " +
-                    "-i \"${inputArgs.path}\" " +
-                    "-c:v copy -map 0:v:0 -map 1:a:0 " +
-                    "\"${getOutputVideoName(inputArgs, " ff")}\""
-        )
+        File(getOutputVideoName(inputArgs, " bitrate")).delete()
+        File(getOutputVideoName(inputArgs, " audio+bitrate")).delete()
 
-        // PRIORITY! научиться ждать окончания работы ффмпег (заиспользовать ffmpeg-cli wrapper?)
+        reEncodeVideo()
 
-//        val frameGrabber = FFmpegFrameGrabber(getOutputVideoName(inputArgs, " ff"))
-//        frameGrabber.start()
-//        // Вытащить из записанного файла битрейт, и если он выше 12к- прогнать
-//        if (frameGrabber.videoBitrate > 12000000 || frameGrabber.videoBitrate < 2000000) {
-//            Runtime.getRuntime().exec(
-//                "ffmpeg -i \"${getOutputVideoName(inputArgs, " ff")}\" " +
-//                        "-maxrate 12M " +
-//                        "-minrate 2M " +
-//                        "-bufsize 6M " +
-//                        "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
-//                        "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
-//            )
-//
-//            do {
-//                println("waiting")
-//                Thread.sleep(500)
-//            } while (File(getOutputVideoName(inputArgs, " ff+bitrate")).totalSpace < 100000)
-//        }
-//
-//        frameGrabber.stop()
-//        frameGrabber.release()
-        //  File(getOutputVideoName(inputArgs)).delete()
+        File(getOutputVideoName(inputArgs)).delete()
+        File(getOutputVideoName(inputArgs, " bitrate")).delete()
     }
 
     private fun convertVideo() {
@@ -154,6 +129,7 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         return frameArray
     }
 
+    // TODO возможно есть способ контролировать битрейт сразу при записи, конвертация занимает много времени
     private fun getVideoWriter(
         inputArgs: InputArgs,
         fps: Double,
@@ -180,21 +156,40 @@ class VideoProcessor(private val inputArgs: InputArgs) {
         Asciificator::class.java.getProtectionDomain().codeSource.location.toURI().getPath()
             .substringBeforeLast("/classes") + "/resources/main/ffmpeg.exe"
 
-    private fun printDebug() {
-        println(
-            "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
+    private fun reEncodeVideo() {
+        val frameGrabber = FFmpegFrameGrabber(getOutputVideoName(inputArgs))
+        frameGrabber.start()
+
+        // Вытащить из записанного файла битрейт, если он выше 12к - прогнать
+        if (frameGrabber.videoBitrate > 12000000) {
+            executeCommand(
+                "ffmpeg -i \"${getOutputVideoName(inputArgs)}\" " +
+                        "-maxrate 12M " +
+                        "-minrate 2M " +
+                        "-bufsize 6M " +
+                        "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
+                        "\"${getOutputVideoName(inputArgs, " bitrate")}\""
+            )
+        }
+        frameGrabber.stop()
+
+        executeCommand(
+            "${getFFmpegPath()} -i \"${getOutputVideoName(inputArgs, " bitrate")}\" " +
                     "-i \"${inputArgs.path}\" " +
                     "-c:v copy -map 0:v:0 -map 1:a:0 " +
-                    "\"${getOutputVideoName(inputArgs, " ff")}\""
+                    "\"${getOutputVideoName(inputArgs, " audio+bitrate")}\""
         )
-        println(
-            "ffmpeg -i \"${getOutputVideoName(inputArgs, " ff")}\" " +
-                    "-maxrate 12M " +
-                    "-minrate 2M " +
-                    "-bufsize 6M " +
-                    "-vf \"crop=trunc(iw/2)*2:trunc(ih/2)*2\" " +
-                    "\"${getOutputVideoName(inputArgs, " ff+bitrate")}\""
-        )
+    }
+
+    private fun executeCommand(command: String) {
+        val process = Runtime.getRuntime().exec(command)
+
+        process.errorStream.bufferedReader().use {
+            var line = it.readLine()
+            while (line != null) {
+                line = it.readLine()
+            }
+        }
     }
 }
 

@@ -63,10 +63,13 @@ private fun runProcessing(inputArgs: InputArgs) {
         camera -> CameraProcessor(inputArgs).start(inputArgs)
 
         video -> {
-            measureTimeMillis("overall") {
-                VideoProcessor(inputArgs).processVideo()
+            try {
+                measureTimeMillis("overall") {
+                    VideoProcessor(inputArgs).processVideo()
+                }
+            } finally {
+                exitProcess(0)
             }
-            exitProcess(0)
         }
 
         else -> {
