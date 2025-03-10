@@ -1,5 +1,6 @@
 package jabava.window.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.loadSvgPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
@@ -29,7 +31,9 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowScope
 import androidx.compose.ui.window.rememberWindowState
+import jabava.screen.ui.MainScreen
 import jabava.theme.AsciiTheme
+import jabava.widgets.ChibiItem
 
 const val APP_NAME = "asciffy-doki"
 
@@ -70,6 +74,8 @@ fun AppWindow(
 					},
 					onCloseClick = { exitApplication() /*appState.value = AppState.InTray*/ } //Уводить в трей если идет загрузка
 				)
+
+				MainScreen()
 			}
 		}
 	}
@@ -140,15 +146,19 @@ fun TopBarActionButton(
 	modifier: Modifier,
 	onButtonClick: () -> Unit
 ) {
-
-	Icon(
+	ChibiItem(
+		backgroundColor = MaterialTheme.colors.secondary,
+		borderWight = 3.dp,
 		modifier = modifier
-			.size(22.dp)
-			.clickable { onButtonClick() },
-		painter = icon,
-		tint = MaterialTheme.colors.primary,
-		contentDescription = null,
-	)
+	) {
+		Image(
+			modifier = Modifier
+				.padding(it)
+				.clickable { onButtonClick() },
+			painter = icon,
+			contentDescription = null,
+		)
+	}
 }
 
 //@Composable
